@@ -1,0 +1,12 @@
+{
+  "version": "2026.09.29.1",
+  "records": 19667,
+  "brands": 122,
+  "sources": {
+    "https://support.apple.com/en-us/108044": 45,
+    "https://github.com/ilyasozkurt/mobilephone-brands-and-models": 10250,
+    "https://github.com/bsthen/device-models": 9372
+  },
+  "sha256": "e758d1f37efef8c5502fa2212ddc2eccf52df34d0017594aa30f8fa153c409f4",
+  "android_source_sha256": "d0a826f153f5d5950c4ec2d8d026c24b8909fd4768cae27135dd4b6fed373743"
+}

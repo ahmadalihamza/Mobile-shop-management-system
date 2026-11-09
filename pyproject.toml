@@ -1,0 +1,14 @@
+[project]
+name = "mobile-desk"
+version = "1.6.0"
+description = "Offline quantity-based phone trading for Windows"
+requires-python = ">=3.12"
+license = "GPL-3.0-or-later"
+dependencies = ["PySide6-Essentials==6.10.2"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 120

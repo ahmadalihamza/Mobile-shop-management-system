@@ -1,0 +1,15 @@
+-r requirements.txt
+pytest==8.4.2
+openpyxl==3.1.5
+pyinstaller==6.16.0
+pyinstaller-hooks-contrib==2026.7
+setuptools==84.0.0
+altgraph==0.17.5
+pefile==2023.2.7
+pywin32-ctypes==0.2.3
+packaging==26.3
+pluggy==1.6.0
+iniconfig==2.3.0
+pygments==2.21.0
+colorama==0.4.6
+et-xmlfile==2.0.0

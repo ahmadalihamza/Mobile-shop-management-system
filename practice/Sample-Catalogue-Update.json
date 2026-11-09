@@ -1,0 +1,19 @@
+{
+  "format": "mobile-desk-catalogue",
+  "schema_version": 1,
+  "version": "2026.10.01.1",
+  "source": "Fictional Mobile Desk practice example; not a real phone specification",
+  "licence": "CC0-1.0",
+  "models": [
+    {
+      "id": "mobile-desk-practice-learningphone-1",
+      "brand": "Practice Brand",
+      "model": "Learning Phone",
+      "aliases": [
+        "learningphone"
+      ],
+      "release_year": 2026
+    }
+  ],
+  "sha256": "2d73eed0f135448ada7fb27a94607db0d6f19c25b6c56fb24cf60589487ee6fb"
+}

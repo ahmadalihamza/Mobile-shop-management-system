@@ -1,0 +1,11 @@
+Mobile Desk is ready.
+
+Your shop records are saved separately in LocalAppData\MobileDesk, not in the program installation folder. Updating or uninstalling this program does not delete those records.
+
+On first launch, enter the shop name, add bank accounts and customers, and enter reviewed opening stock and balances before making sales.
+
+The owner should set their own username and password in Settings > Owner & Reset before staff use the software. Reset and backup restore require these credentials. There is no default password.
+
+Use Settings > Backup & Restore > Backup Database at the end of each trading day. For one mistaken entry use Undo Last Entry. To clear all practice/business records use Settings > Owner & Reset > Reset All Business Data; a safety backup is saved automatically. A new month normally needs only new report dates, not a reset.
+
+The user guide is available in Settings and beside the executable.

@@ -1,0 +1,192 @@
+{
+  "status": "passed",
+  "records_created_only_in_temporary_directory": true,
+  "practice_shop_not_populated": true,
+  "day": "2026-10-01",
+  "opening_date": "2026-09-30",
+  "checkpoints": [
+    {
+      "stage": "Opening state",
+      "stock_pieces": 3,
+      "stock_value": "95000.00",
+      "cash": "500000.00",
+      "bank": "300000.00",
+      "ali": "20000.00",
+      "karachi": "10000.00",
+      "china": "0.00"
+    },
+    {
+      "stage": "Local purchase",
+      "stock_pieces": 6,
+      "stock_value": "224000.00",
+      "cash": "500000.00",
+      "bank": "221000.00",
+      "ali": "20000.00",
+      "karachi": "60000.00",
+      "china": "0.00"
+    },
+    {
+      "stage": "China purchase",
+      "stock_pieces": 10,
+      "stock_value": "392000.00",
+      "cash": "497000.00",
+      "bank": "121000.00",
+      "ali": "20000.00",
+      "karachi": "60000.00",
+      "china": "60000.00"
+    },
+    {
+      "stage": "Sale 1, cash walk-in",
+      "stock_pieces": 9,
+      "stock_value": "352000.00",
+      "cash": "547000.00",
+      "bank": "121000.00",
+      "ali": "20000.00",
+      "karachi": "60000.00",
+      "china": "60000.00"
+    },
+    {
+      "stage": "Sale 2, multi-product split partial",
+      "stock_pieces": 6,
+      "stock_value": "227000.00",
+      "cash": "587000.00",
+      "bank": "181000.00",
+      "ali": "74000.00",
+      "karachi": "60000.00",
+      "china": "60000.00"
+    },
+    {
+      "stage": "Sales 3 and 4, credit and bank walk-in",
+      "stock_pieces": 4,
+      "stock_value": "170000.00",
+      "cash": "587000.00",
+      "bank": "232000.00",
+      "ali": "94000.00",
+      "karachi": "60000.00",
+      "china": "60000.00"
+    },
+    {
+      "stage": "Later customer and supplier payments",
+      "stock_pieces": 4,
+      "stock_value": "170000.00",
+      "cash": "527000.00",
+      "bank": "262000.00",
+      "ali": "34000.00",
+      "karachi": "0.00",
+      "china": "30000.00"
+    },
+    {
+      "stage": "Customer return and partial refund",
+      "stock_pieces": 5,
+      "stock_value": "212000.00",
+      "cash": "507000.00",
+      "bank": "262000.00",
+      "ali": "4000.00",
+      "karachi": "0.00",
+      "china": "30000.00"
+    },
+    {
+      "stage": "Completed trading day",
+      "stock_pieces": 5,
+      "stock_value": "212000.00",
+      "cash": "440000.00",
+      "bank": "312000.00",
+      "ali": "0.00",
+      "karachi": "0.00",
+      "china": "30000.00"
+    },
+    {
+      "stage": "Recovered after reset",
+      "stock_pieces": 5,
+      "stock_value": "212000.00",
+      "cash": "440000.00",
+      "bank": "312000.00",
+      "ali": "0.00",
+      "karachi": "0.00",
+      "china": "30000.00"
+    },
+    {
+      "stage": "Restarted from opening backup",
+      "stock_pieces": 3,
+      "stock_value": "95000.00",
+      "cash": "500000.00",
+      "bank": "300000.00",
+      "ali": "20000.00",
+      "karachi": "10000.00",
+      "china": "0.00"
+    }
+  ],
+  "profit": {
+    "sales_before_returns": "275000.00",
+    "returns": "50000.00",
+    "net_sales": "225000.00",
+    "cogs": "180000.00",
+    "gross_profit": "45000.00",
+    "recorded_expenses": "12000.00",
+    "discounts": "4000.00",
+    "profit_after_expenses": "29000.00"
+  },
+  "product_profit": [
+    {
+      "product": "Practice Used Phone 6/128",
+      "sold": 1,
+      "returned": 0,
+      "gross_profit": "5000.00"
+    },
+    {
+      "product": "Samsung Galaxy A55 8/256 Navy",
+      "sold": 3,
+      "returned": 0,
+      "gross_profit": "31000.00"
+    },
+    {
+      "product": "Xiaomi Redmi Note 14 8/256 Black",
+      "sold": 2,
+      "returned": 1,
+      "gross_profit": "9000.00"
+    }
+  ],
+  "cash_bank_summary": [
+    {
+      "account": "Cash",
+      "opening": "500000.00",
+      "received": "90000.00",
+      "paid_out": "150000.00",
+      "closing": "440000.00"
+    },
+    {
+      "account": "Practice Bank",
+      "opening": "300000.00",
+      "received": "221000.00",
+      "paid_out": "209000.00",
+      "closing": "312000.00"
+    }
+  ],
+  "daily_sales": {
+    "quantity": 6,
+    "invoices": 4,
+    "sales": "275000.00",
+    "receipts": "201000.00",
+    "credit_sales": "74000.00",
+    "collections": "60000.00",
+    "returns": "50000.00",
+    "net_sales": "225000.00"
+  },
+  "additional_exercises": [
+    "customer advance",
+    "supplier advance",
+    "dual-role independent balances",
+    "manual adjustments and discounts",
+    "FX snapshot protection",
+    "per-line FX override",
+    "named customer return with no refund",
+    "walk-in full refund",
+    "fully paid local purchase without supplier",
+    "invalid stock/credit/overpayment/transfer blocked",
+    "expense undo",
+    "used purchase undo blocked",
+    "catalogue update independent of stock",
+    "full reset and recovery",
+    "opening/clean backup restart"
+  ]
+}
