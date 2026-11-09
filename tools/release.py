@@ -58,7 +58,8 @@ def prepare():
     for directory,patterns in {'mobile_desk':('*.py',),'tests':('*.py',),'installer':('*.iss','*.spec','*.txt')}.items():
         included.extend(p for p in files_in(ROOT/directory) if any(p.match(pattern) for pattern in patterns))
     included.extend(ROOT/'resources'/name for name in ('app.ico','dropdown.svg','catalogue_metadata.json','mobile_catalogue.json'))
-    included.extend(p for p in files_in(ROOT/'resources/licences') if p.suffix=='.txt' or p.name=='qt_attribution.json')
+    # Qt notices include extensionless LICENSE and COPYING files.
+    included.extend(files_in(ROOT/'resources/licences'))
     included.extend(ROOT/'docs'/name for name in GUIDES if (ROOT/'docs'/name).exists())
     # Raw client data and extracted prototype never enter a public application package.
     with zipfile.ZipFile(source_zip,'w',zipfile.ZIP_DEFLATED,compresslevel=9) as z:
