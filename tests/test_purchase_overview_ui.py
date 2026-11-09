@@ -80,6 +80,8 @@ def test_purchase_page_routes_selected_shipment_to_return_and_arrival_dialogs(ap
     batch = purchase(shop, received=False)
     window = MainWindow(shop)
     page = window.purchase_page()
+    page.start.setDate(QDate(2026, 10, 1))
+    page.end.setDate(QDate(2026, 10, 31))
     page.refresh()
     assert page.table.selected()['id'] == batch
     assert page.table.selected()['shipment_status'] == 'IN_TRANSIT'
