@@ -2,6 +2,7 @@
 from pathlib import Path
 import json
 import sys
+from statistics import median
 from time import perf_counter
 from tempfile import TemporaryDirectory
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
@@ -31,15 +32,37 @@ with TemporaryDirectory(prefix='mobile-desk-benchmark-') as temp:
         'dashboard':lambda:ctx.reports.dashboard('2025-09-30'),
         'five_year_product_report':lambda:ctx.reports.product_sales('2021-01-01','2025-12-31'),
         'customer_statement_25000_rows':lambda:ctx.parties.statement(customer),
+        'product_lookup':lambda:ctx.products.search('phone 00123',limit=100),
+        'month_model_report':lambda:ctx.reports.model_sales('2025-09-01','2025-09-30'),
     }
     results={}
     for name,fn in functions.items():
-        start=perf_counter()
-        value=fn()
-        results[name]=dict(milliseconds=round((perf_counter()-start)*1000,2),rows=len(value))
+        samples=[]
+        for _ in range(5):
+            start=perf_counter()
+            value=fn()
+            samples.append((perf_counter()-start)*1000)
+        results[name]=dict(milliseconds=round(median(samples),2),rows=len(value))
     assert ctx.stock.totals()['quantity']==75000
     assert ctx.parties.balance(customer)==1500000000
-    report=dict(products=5000,invoices=25000,purchase_lots=5000,stock_movements=30000,financial_integrity='passed',queries=results)
+    start=perf_counter()
+    ctx.sales.post('2025-09-02',[dict(product_id=1,quantity=1,selling_rate='700')],
+                   customer_id=customer)
+    results['routine_sale_save']=dict(milliseconds=round((perf_counter()-start)*1000,2))
+    from PySide6.QtWidgets import QApplication
+    from mobile_desk.ui.main_window import MainWindow
+    app=QApplication([])
+    start=perf_counter()
+    window=MainWindow(Context(Path(temp),install_catalogue=False))
+    app.processEvents()
+    results['existing_shop_to_dashboard']=dict(milliseconds=round((perf_counter()-start)*1000,2))
+    start=perf_counter()
+    window.navigate(3)
+    app.processEvents()
+    results['first_stock_navigation']=dict(milliseconds=round((perf_counter()-start)*1000,2))
+    window.close()
+    report=dict(products=5000,invoices=25000,purchase_lots=5000,stock_movements=30000,
+                financial_integrity='passed',sample_count_on_queries=5,queries=results)
     target=Path(__file__).resolve().parents[1]/'docs/qa/business-performance.json'
     target.parent.mkdir(parents=True,exist_ok=True)
     target.write_text(json.dumps(report,indent=2),encoding='utf-8')

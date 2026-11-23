@@ -1,6 +1,7 @@
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QDialog,QVBoxLayout,QHBoxLayout,QLineEdit,QCheckBox,QGridLayout,QWidget
 from mobile_desk.ui.common import EntryDialog,DataTable,button,label
+from mobile_desk.values import currency
 
 
 class ProductDialog(EntryDialog):
@@ -24,6 +25,7 @@ class ProductDialog(EntryDialog):
         cat_layout.addWidget(self.results)
         cat_layout.addWidget(button('Use selected model',self.use_selected))
         self.body.insertWidget(0,self.catalogue_area)
+        self.body.insertWidget(0,button('Find in Catalogue',self.open_catalogue))
         self.fields={}
         self.name=self.field('Product name',QLineEdit(product['custom_name'] if product else ''))
         self.name.setPlaceholderText('Use any useful name, including variant or condition')
@@ -69,8 +71,13 @@ class ProductDialog(EntryDialog):
             self.detail_toggle.setChecked(True)
             self.update_preview()
         else:
-            self.find()
-            self.search.setFocus()
+            self.catalogue_area.hide()
+            self.name.setFocus()
+
+    def open_catalogue(self):
+        self.catalogue_area.show()
+        self.find()
+        self.search.setFocus()
 
     def find(self):
         self.results.populate(self.ctx.catalogue.search(self.search.text(),50) if self.ctx.catalogue else [])
@@ -121,7 +128,8 @@ class ProductPicker(QDialog):
         bar.addWidget(self.search,1)
         bar.addWidget(button('+ Add New Product',self.add,True))
         layout.addLayout(bar)
-        self.table=DataTable([('custom_name','Shop product'),('stock','Available pieces')])
+        self.table=DataTable([('custom_name','Shop product'),('stock','Available pieces'),
+                              ('average_purchase_price','Purchase average PKR',currency)])
         layout.addWidget(self.table,1)
         self.table.cellDoubleClicked.connect(self.choose)
         foot=QHBoxLayout()
@@ -129,7 +137,11 @@ class ProductPicker(QDialog):
         foot.addWidget(button('Cancel',self.reject))
         foot.addWidget(button('Add selected product',self.choose,True))
         layout.addLayout(foot)
-        self.search.textChanged.connect(self.refresh)
+        self.timer=QTimer(self)
+        self.timer.setSingleShot(True)
+        self.timer.setInterval(120)
+        self.timer.timeout.connect(self.refresh)
+        self.search.textChanged.connect(lambda:self.timer.start())
         self.search.returnPressed.connect(self.choose)
         self.refresh()
         self.search.setFocus()
@@ -138,6 +150,9 @@ class ProductPicker(QDialog):
         self.table.populate(self.ctx.products.search(self.search.text(),limit=100))
 
     def choose(self,*args):
+        if self.timer.isActive():
+            self.timer.stop()
+            self.refresh()
         self.product=self.table.selected()
         if self.product:
             self.accept()

@@ -76,8 +76,8 @@ def test_schema_four_upgrade_preserves_old_costs_and_creates_safety_copy(tmp_pat
     assert lot['carry_currency']=='PKR' and lot['foreign_carry_per_unit'] is None
     assert lot['landed_unit_cost']==money('40100')
     assert db.one('SELECT * FROM purchase_batches')['shipment_status']=='RECEIVED'
-    assert db.one('PRAGMA user_version')['user_version']==5
-    assert list(tmp_path.glob('legacy.before-v5-*.db'))
+    assert db.one('PRAGMA user_version')['user_version']==6
+    assert list(tmp_path.glob('legacy.before-v6-*.db'))
     assert db.one('PRAGMA integrity_check')['integrity_check']=='ok'
 
 

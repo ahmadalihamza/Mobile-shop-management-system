@@ -1,6 +1,6 @@
 # Mobile Desk — complete practice workbook
 
-For Mobile Desk 1.6.0. Follow the main trading day in order, then try the extra exercises. The figures below were checked against the actual application's calculation engine. These are fictional training prices, exchange rates and contacts, not market quotations. The additional China-Imports-And-Returns.md guide covers stack charges, arrival, supplier returns and confirmed refunds. Reason fields have been removed; the software records action descriptions automatically.
+For Mobile Desk 1.7.0. Follow the main trading day in order, then try the extra exercises. The figures below were checked against the actual application's calculation engine. These are fictional training prices, exchange rates and contacts, not market quotations. The additional China-Imports-And-Returns.md guide covers stack charges, arrival, supplier returns and confirmed refunds. Reason fields have been removed; the software records action descriptions automatically.
 
 ## 1. Open the separate blank practice shop
 
@@ -47,7 +47,7 @@ Open **Settings → Shop**. Set **Invoice prefix** to `PR-` and **Next invoice s
 
 Open **Settings → Owner & Reset → Set owner password**. Username: `practiceowner`. Choose your own password of at least 8 characters and confirm it. Keep it safely; there is no default password. This practice owner is separate from the normal shop's owner. Do not copy a published example password into a real shop.
 
-Open **Cash & Bank → Accounts → Add account**. Create `Practice Bank`, type Bank, opening amount `0`, opening date 30 September 2026, Active checked. Keep the existing Cash account.
+Open **Accounts → Cash & Bank → Accounts → Add account**. Create `Practice Bank`, type Bank, opening amount `0`, opening date 30 September 2026, Active checked. Keep the existing Cash account.
 
 Under **Settings → Backup & Restore**, choose this preferred backup folder:
 
@@ -57,7 +57,7 @@ Click **Backup Database** and choose `Backups\01-CleanSetup` (create it if neede
 
 ## 4. Enter starting Cash and Bank balances
 
-Open **Cash & Bank → Accounts**. Select each account → **Edit account**:
+Open **Accounts → Cash & Bank → Accounts**. Select each account → **Edit account**:
 
 | Account | Opening amount PKR | Opening date | Negative opening? |
 |---|---:|---|---|
@@ -70,9 +70,9 @@ An opening balance is money already present at the starting point. Do not also r
 
 ## 5. Create three shop products
 
-For the Samsung product, open **Stock & Products → Mobile Catalogue**, search `a55`, select Galaxy A55 and click **Create Shop Product**. Fill the product name and optional details below. If your selected reference has a slightly different display name, use the exact custom product name in this table for the lesson.
+For the Samsung product, open **Stock → Add Product → Find in Catalogue**, search `a55`, select Galaxy A55 and use the result and save the shop product. Fill the product name and optional details below. If your selected reference has a slightly different display name, use the exact custom product name in this table for the lesson.
 
-Repeat with a catalogue search for `note 14` for Xiaomi. For the used phone choose **Add Product → + Add Product Manually**; catalogue coverage is not required.
+Repeat with a catalogue search for `note 14` for Xiaomi. For the used phone choose **Add Product**; catalogue coverage is not required.
 
 | Product name | Optional details | Other search names |
 |---|---|---|
@@ -198,7 +198,7 @@ Expected `PR-000004`: profit **9,000**, no customer debt. Bank **232,000**; Cash
 
 ## 15. Receive a later customer payment
 
-**Customers → Ali Dealer → Receive Payment**. Date 1 October 2026; amount **60,000**; receive into Practice Bank; reference `ALI-COLLECT-1`. Save.
+**Accounts → Customers → Ali Dealer → Receive Payment**. Date 1 October 2026; amount **60,000**; receive into Practice Bank; reference `ALI-COLLECT-1`. Save.
 
 Expected: Ali owes **34,000**, Bank **292,000**. No new sale or profit is created.
 
@@ -211,11 +211,11 @@ Open account → **Bills / balances**. The payment settles oldest balances first
 | Karachi Supply | 1 October 2026 | 60,000 | Cash | KARACHI-PAY-1 | 0 |
 | China Supply | 1 October 2026 | 30,000 | Practice Bank | CHINA-PAY-1 | 30,000 |
 
-Use **Suppliers → select supplier → Pay Supplier** for each. Expected money: Cash **527,000**, Bank **262,000**. These payments settle debts; they do not deduct purchase costs from profit again.
+Use **Accounts → Suppliers → select supplier → Pay Supplier** for each. Expected money: Cash **527,000**, Bank **262,000**. These payments settle debts; they do not deduct purchase costs from profit again.
 
 ## 17. Return from Ali's invoice, with a partial cash refund
 
-Find `PR-000002` in Sales, select it → **Return**. Date 1 October 2026. Set **Return now** to **1** on the Xiaomi row; leave the Samsung row at **0**. Returned value **50,000**. Refund now **20,000**, refund from Cash; notes `Practice customer return — saleable phone`. Save Return.
+Find `PR-000002` in Sales, select it → **Open invoice → Return phones**. Date 1 October 2026. Set **Return now** to **1** on the Xiaomi row; leave the Samsung row at **0**. Returned value **50,000**. Refund now **20,000**, refund from Cash; notes `Practice customer return — saleable phone`. Save Return.
 
 The return reduces the customer balance by 50,000, and the actual refund adds 20,000 back to what is owed: 34,000 − 50,000 + 20,000 = **4,000 owed by Ali**.
 
@@ -223,13 +223,13 @@ Expected stock **5 pieces / 212,000**; Cash **507,000**; Bank **262,000**. The p
 
 ## 18. Pay the remaining external carry
 
-**Purchases → CHINA-TRAIN-1 → Open batch → Pay transport / carry**. Date 1 October 2026; amount **5,000**; Pay from Cash; save.
+**Purchases → CHINA-TRAIN-1 → Open purchase → Pay transport / carry**. Date 1 October 2026; amount **5,000**; Pay from Cash; save.
 
 Expected Cash **502,000**, remaining external carry **0**, China supplier debt still **30,000**, stock value still **212,000**. This is payment of a cost already included in stock, not another profit deduction.
 
 ## 19. Record shop expenses
 
-Open **Cash & Bank → Expenses → Record Expense** twice:
+Open **Accounts → Cash & Bank → Expenses → Record Expense** twice:
 
 | Date | Description | Amount PKR | Paid from | Category |
 |---|---|---:|---|---|
@@ -240,13 +240,13 @@ Expected Cash **490,000**, total recorded expenses **12,000**. These are separat
 
 ## 20. Transfer Cash to Bank
 
-**Cash & Bank → Transfers → New Transfer**. Date 1 October 2026; From Cash; To Practice Bank; amount **50,000**; reference `CASH-TO-BANK-1`; Save.
+**Accounts → Cash & Bank → Transfers → New Transfer**. Date 1 October 2026; From Cash; To Practice Bank; amount **50,000**; reference `CASH-TO-BANK-1`; Save.
 
 Expected Cash **440,000**, Bank **312,000**, total money **752,000**. The transfer changes neither total money nor profit.
 
 ## 21. Agree a final customer discount
 
-**Customers → Ali Dealer → Open account → Opening / adjust balance**. Date 1 October 2026; Adjustment **Agreed discount**; amount **4,000**. Save.
+**Accounts → Customers → Ali Dealer → Open account → Opening / adjust balance**. Date 1 October 2026; Adjustment **Agreed discount**; amount **4,000**. Save.
 
 Expected Ali balance **0**. Money accounts do not change because no money was received. Period Profit separately deducts this customer discount, leaving **29,000 profit after expenses and discounts**.
 
@@ -272,7 +272,7 @@ Expected Ali balance **0**. Money accounts do not change because no money was re
 | Recorded expenses / customer discounts | 12,000 / 4,000 |
 | Profit after expenses and discounts | 29,000 |
 
-Dashboard: Today's sales **275,000** shows gross posted sales; Sales this month **225,000** is after returns. Purchases this month **297,000** excludes the 95,000 opening stock. Customers owe **0**; Suppliers owed **30,000**; Stock pieces **5**.
+Dashboard: Today’s net sales and This month’s net sales both show **225,000** after returns. Phones sold today shows **6** pieces before returns and This month’s gross profit shows **45,000**. Customers owe **0**; Suppliers owed **30,000**; Stock pieces **5**.
 
 The dashboard's day/month sales figures above assume the computer is on 1 October / within October 2026. If you practice on another date, use the lesson's explicit report date range to check the totals; the dashboard's Today view follows the computer date. Current stock and overall account balances still show the existing practice position.
 
@@ -280,18 +280,18 @@ Save a backup in `Backups\03-CompletedDay`. This is the baseline for every extra
 
 ## 23. Run every report
 
-Open Reports. Set From **1 October 2026** and To **1 October 2026** unless stated otherwise. Click **Run report** after choosing the report. Clear any search filter before checking totals.
+Open Reports. Set From **1 October 2026** and To **1 October 2026** unless stated otherwise. Choose one of the four main reports or use **More Reports**, then click **Run report**. Clear any search filter before checking totals.
 
 | Report | What to look for |
 |---|---|
-| Daily Sales | 6 pieces, Sales 275,000, Paid at sale 201,000, Credit at sale 74,000, Later collections 60,000, Returns 50,000, Net sales 225,000 |
+| Daily Sales | 6 sold, 1 returned, 5 net pieces, net sales 225,000. Paid at sale plus later receipts 261,000, credit at sale 74,000 and cash refunds 20,000. |
 | Monthly Sales | With From 1 October and To 31 October, October totals match the day above if you made no extra entries |
-| Product Sales / Profit | Samsung sold 3, gross profit 31,000; Xiaomi sold 2, returned 1, gross profit 9,000; Used sold 1, gross profit 5,000. Customer discount is in Period Profit, not deducted from these product gross-profit rows |
+| Product Profit | Samsung sold 3, gross profit 31,000; Xiaomi sold 2, returned 1, gross profit 9,000; Used sold 1, gross profit 5,000. Customer discount is in Period Profit, not deducted from these product gross-profit rows |
 | Customer Outstanding | No row for Ali because his balance is zero; negative advance balances appear in later exercises |
 | Customer Statement | Select Ali from the actual dropdown list: opening brought forward 20,000, sale/payment/return/discount entries, final balance zero |
 | Supplier Outstanding | China Supply 30,000; Karachi is absent because its balance is zero |
 | Supplier Statement | Select Karachi or China; follow opening bill, current purchases and actual payments |
-| Current Stock / Stock Value | Samsung 2 / 86,000; Xiaomi 3 / 126,000; Used 0 / 0; this report is current stock, not an old historical stock position |
+| Available Stock | Samsung 2 / 86,000; Xiaomi 3 / 126,000; Used 0 / 0; this report is current stock, not an old historical stock position |
 | Purchase History | OPEN-TRAIN-1, LOCAL-TRAIN-1, CHINA-TRAIN-1; opening batch has two product lines |
 | China Batch / Landed Cost | RMB 1,000, rate 40, PKR unit 40,000, carry 2,000, landed 42,000, line total 168,000, remaining 3 pieces |
 | Period Profit | Sales before returns 275,000; returns 50,000; net sales 225,000; COGS 180,000; gross profit 45,000; expenses 12,000; discounts 4,000; profit after expenses 29,000 |
@@ -304,9 +304,9 @@ On a statement report, type a name and choose the matching dropdown result; simp
 
 ## 24. Search, inspect, print and export
 
-Try `a55`, `navy`, `note14black` in Stock & Products; `LOCAL-TRAIN-1` in Purchases; `PR-000002` or `Ali` in Sales. Check the From/To filters if a date-based list looks empty. Use product/contact/batch search on the report screens that offer it.
+Try `a55`, `navy`, `note14black` in Stock; `LOCAL-TRAIN-1` in Purchases; `PR-000002` or `Ali` in Sales. Check the From/To filters if a date-based list looks empty. Use product/contact/batch search on the report screens that offer it.
 
-Select Samsung → **Product details**. Check the opening lot cost 40,000 and local lot cost 43,000, remaining pieces and original sales. Select an invoice → **View / Print → Save PDF**; save as `Practice-PR-000002.pdf`. Try Print / Preview; Cancel is enough if you do not want to print paper.
+Select Samsung → **Product details**. Check the opening lot cost 40,000 and local lot cost 43,000, remaining pieces and original sales. Select an invoice → **Open invoice → Print / PDF → Save PDF**; save as `Practice-PR-000002.pdf`. Try Print / Preview; Cancel is enough if you do not want to print paper.
 
 Open a purchase batch → **Print / PDF**. Open Ali/China account → **Print statement**. In Reports choose **Export CSV**, save e.g. `Practice-Stock.csv`, then open it in Excel if desired. The CSV is a report export, not a data import. Choose **Print / PDF** to save a report PDF too.
 
@@ -316,7 +316,7 @@ Invoices keep original Paid at sale and Credit at sale. Bills / balances and sta
 
 Start from the completed-day backup. Add an Expense: date 1 October, description `Mistaken learning expense`, amount **1,000**, Cash. Cash becomes **439,000** and profit after expenses **28,000**.
 
-Click **Undo Last Entry** in the sidebar. Confirm it shows this expense and click **Undo This Entry**. No reason typing is required. Cash returns to **440,000**, profit to **29,000**. In Expenses the original still exists with a void timestamp. The app retains correction history.
+Open **Settings → Owner & Reset → Undo Last Entry**. Confirm it shows this expense and click **Undo This Entry**. No reason typing is required. Cash returns to **440,000**, profit to **29,000**. In Expenses the original still exists with a void timestamp. The app retains correction history.
 
 For an older specific record use the relevant list's **Undo selected entry**, **Void** or **Correct payment** button. Customer/supplier account detail → Payments/Balance adjustments also has **Correct selected entry**. Posted invoice receipts are corrected with their original invoice, not independently through payment correction.
 
@@ -326,7 +326,7 @@ Unsaved text can use normal text-field Undo/Ctrl+Z; Cancel closes an unsaved ent
 
 Restore CompletedDay first. Buy one Practice Used Phone at **18,000**, Local purchase, reference `UNDO-LOCAL-1`, supplier blank, record payment **18,000 from Cash**. A fully paid purchase needs no supplier. Sell that phone to a walk-in for **22,000**, fully paid Cash.
 
-Try selecting UNDO-LOCAL-1 → Undo selected entry. The app must block reversal because an active sale uses its stock. Undo the new 22,000 sale first, then undo the 18,000 purchase. Stock and money return to the completed-day baseline. The sale and purchase remain visibly Voided.
+Try selecting UNDO-LOCAL-1 → Open purchase → Undo purchase (in More actions if needed). The app must block reversal because an active sale uses its stock. Undo the new 22,000 sale first, then undo the 18,000 purchase. Stock and money return to the completed-day baseline. The sale and purchase remain visibly Voided.
 
 Later independent on-account payments are not automatically undone with a purchase/sale; they may become advances until a replacement bill is entered. Active returns must be corrected before their original invoice can be undone.
 
@@ -364,11 +364,11 @@ For a line-override exercise start again from CompletedDay, default rate **41**,
 
 ## 31. Returns without a refund and walk-in full refunds
 
-Restore CompletedDay. Select PR-000003 (Ali's used-phone credit sale) → Return one used phone; refund **0**. Since Ali was fully settled by the completed-day checkpoint, the return creates customer credit **−20,000**. Cash/Bank do not change. Stock becomes **6 / 227,000**; the used phone comes back at original cost 15,000. Restore CompletedDay.
+Restore CompletedDay. Select PR-000003 (Ali's used-phone credit sale) → Open invoice → Return phones → return one used phone; refund **0**. Since Ali was fully settled by the completed-day checkpoint, the return creates customer credit **−20,000**. Cash/Bank do not change. Stock becomes **6 / 227,000**; the used phone comes back at original cost 15,000. Restore CompletedDay.
 
-Select PR-000001 (walk-in Samsung sale) → Return one Samsung. The app requires the full **50,000** refund; choose Cash. Expected stock **6 / 252,000**, Cash **390,000**. There is no named walk-in account to hold unpaid refund credit, so a walk-in return needs a full refund. Restore CompletedDay.
+Select PR-000001 (walk-in Samsung sale) → Open invoice → Return phones → return one Samsung. The app requires the full **50,000** refund; choose Cash. Expected stock **6 / 252,000**, Cash **390,000**. There is no named walk-in account to hold unpaid refund credit, so a walk-in return needs a full refund. Restore CompletedDay.
 
-To undo a return itself, use Undo Last Entry if it is the most recent active transaction, or Reports → Returns → select the record → **Undo selected return**. Later stock use can block reversal; correct those dependents first. Do not treat damaged stock as a normal saleable return.
+To undo a return itself, use Undo Last Entry if it is the most recent active transaction, or Reports → More Reports → Returns → select the record → **Undo selected return**. Later stock use can block reversal; correct those dependents first. Do not treat damaged stock as a normal saleable return.
 
 ## 32. Edit product/contact/account details and availability
 

@@ -1,4 +1,4 @@
-# Mobile Desk 1.6.0
+# Mobile Desk 1.7.0 — Simple Shop Edition
 
 An offline Windows desktop application for a mobile-phone trader. Native PySide6, SQLite and quantity stock; no browser or network is needed for trading. Local owner credentials protect reset and backup restore.
 
@@ -6,7 +6,9 @@ Daily work: sales, local/RMB purchases, customer collections, supplier payments,
 
 ## Start
 
-Download the [Windows installer](https://github.com/ahmadalihamza/Mobile-shop-management-system/releases/download/v1.6.0/MobileDesk-1.6.0-Setup.exe) or the [portable Windows build](https://github.com/ahmadalihamza/Mobile-shop-management-system/releases/tag/v1.6.0). Extract the portable ZIP before running `MobileDesk.exe`. Records live in `%LOCALAPPDATA%/MobileDesk`, independently of the executable. Enter your shop identity, set the owner's credentials in Settings → Owner & Reset, then enter actual opening stock/balances and new business activity. See the [user guide](USER_GUIDE.md). Upgrading does not reset existing records.
+Build or use the Windows delivery files `MobileDesk-1.7.0-Setup.exe` and `MobileDesk-1.7.0-Windows-x64.zip`. Extract the portable ZIP before running `MobileDesk.exe`. Records live in `%LOCALAPPDATA%/MobileDesk`. Set the owner's credentials in Settings → Owner & Reset before the shop begins trading. See the [user guide](USER_GUIDE.md). The schema upgrade creates a safety snapshot before changing existing records.
+
+The sidebar has Dashboard, Sales, Purchases, Stock, Accounts and Reports. Accounts brings customer, supplier and cash or bank records together. The dashboard separates sales, receipts and outstanding balances. Stock shows three different averages, and sales can carry a physical bill-book number alongside the app invoice ID. See the [1.7 changelog](docs/V7_CHANGELOG.md).
 
 New installations start with an empty business database. The downloads contain no shop data, spreadsheets, backups, or owner credentials.
 

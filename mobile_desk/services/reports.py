@@ -1,6 +1,6 @@
 """Database-derived reports. Monetary SQL aggregation uses integers only."""
 from decimal import Decimal, ROUND_HALF_UP
-from mobile_desk.values import business_date, today
+from mobile_desk.values import business_date, today, weighted_average
 from mobile_desk.services.parties import PartyService
 from mobile_desk.services.stock import StockService
 
@@ -77,10 +77,67 @@ class ReportService:
         return list(by_product.values())
 
     def outstanding(self, end='9999-12-31'):
-        return self.db.rows('SELECT p.id,p.name,p.phone,p.balance_basis,COALESCE(SUM(l.amount),0) balance FROM parties p LEFT JOIN party_ledger l ON l.party_id=p.id AND l.transaction_date<=? WHERE p.is_customer=1 GROUP BY p.id HAVING balance!=0 ORDER BY balance DESC', (end,))
+        return self.db.rows("""
+            SELECT p.id,p.name,p.phone,p.balance_basis,l.balance FROM
+                (SELECT party_id,SUM(amount) balance FROM party_ledger
+                 WHERE transaction_date<=? GROUP BY party_id HAVING SUM(amount)!=0) l
+            JOIN parties p ON p.id=l.party_id WHERE p.is_customer=1 ORDER BY l.balance DESC,p.id
+        """, (end,))
 
     def supplier_outstanding(self,end='9999-12-31'):
-        return self.db.rows('SELECT p.id,p.name,p.phone,COALESCE(SUM(l.amount),0) balance FROM parties p LEFT JOIN supplier_ledger l ON l.party_id=p.id AND l.transaction_date<=? WHERE p.is_supplier=1 GROUP BY p.id HAVING balance!=0 ORDER BY balance DESC',(end,))
+        return self.db.rows("""
+            SELECT p.id,p.name,p.phone,l.balance FROM
+                (SELECT party_id,SUM(amount) balance FROM supplier_ledger
+                 WHERE transaction_date<=? GROUP BY party_id HAVING SUM(amount)!=0) l
+            JOIN parties p ON p.id=l.party_id WHERE p.is_supplier=1 ORDER BY l.balance DESC,p.id
+        """, (end,))
+
+    def model_sales(self, start, end, *, daily=False, product_ids=None):
+        """Net activity booked in the window. Returns use their own transaction dates."""
+        args = [start, end]
+        product_filter = ''
+        if product_ids is not None:
+            ids = list(dict.fromkeys(product_ids))
+            if not ids:
+                return []
+            product_filter = ' AND i.product_id IN (' + ','.join('?' for _ in ids) + ')'
+            args.extend(ids)
+        sold_date = 's.transaction_date' if daily else "''"
+        returned_date = 'r.transaction_date' if daily else "''"
+        known_date = '' if (start, end) == ('1900-01-01','9999-12-31') else " AND {alias}.date_basis!='UNKNOWN'"
+        rows = self.db.rows(f"""
+            WITH activity AS (
+                SELECT {sold_date} day,i.product_id,i.quantity pieces,0 returned,
+                    i.line_total revenue,i.cogs cost,1-i.cogs_known unknown
+                FROM sales s JOIN sale_items i ON i.sale_id=s.id
+                WHERE s.status='POSTED' AND s.transaction_date BETWEEN ? AND ?
+                {known_date.format(alias='s')}{product_filter}
+                UNION ALL
+                SELECT {returned_date},i.product_id,0,i.quantity,-i.line_total,-i.cogs_reversed,1-i.cogs_known
+                FROM returns r JOIN return_items i ON i.return_id=r.id
+                WHERE r.status='POSTED' AND r.transaction_date BETWEEN ? AND ?
+                {known_date.format(alias='r')}{product_filter}
+            )
+            SELECT a.day,a.product_id,p.custom_name,SUM(a.pieces) sold_pieces,SUM(a.returned) returned_pieces,
+                   SUM(a.pieces-a.returned) net_quantity,SUM(a.revenue) net_sales,
+                   CASE WHEN SUM(a.unknown)=0 THEN SUM(a.cost) END net_cogs
+            FROM activity a JOIN products p ON p.id=a.product_id
+            GROUP BY a.day,a.product_id ORDER BY a.day DESC,p.custom_name,p.id
+        """, (*args, *args))
+        for row in rows:
+            row['selling_average'] = weighted_average(row['net_sales'], row['net_quantity'])
+            row['gross_profit'] = None if row['net_cogs'] is None else row['net_sales'] - row['net_cogs']
+            row['margin'] = None if row['gross_profit'] is None or row['net_sales'] <= 0 else (
+                Decimal(row['gross_profit']) * 100 / row['net_sales'])
+        return rows
+
+    def receipt_totals(self, start, end):
+        return self.db.one("""
+            SELECT COALESCE(SUM(CASE WHEN purpose='SALE_RECEIPT' THEN amount ELSE 0 END),0) at_sale,
+                COALESCE(SUM(CASE WHEN purpose='CUSTOMER_PAYMENT' THEN amount ELSE 0 END),0) later,
+                COALESCE(SUM(CASE WHEN purpose='RETURN_REFUND' THEN amount ELSE 0 END),0) refunds
+            FROM payments WHERE voided_at IS NULL AND date_basis!='UNKNOWN' AND transaction_date BETWEEN ? AND ?
+        """, (start,end))
 
     def cash_summary(self, start, end):
         return self.db.rows('SELECT a.id,a.name,COALESCE(SUM(CASE WHEN m.transaction_date<? THEN m.amount ELSE 0 END),0) opening,COALESCE(SUM(CASE WHEN m.transaction_date BETWEEN ? AND ? AND m.amount>0 THEN m.amount ELSE 0 END),0) received,COALESCE(SUM(CASE WHEN m.transaction_date BETWEEN ? AND ? AND m.amount<0 THEN -m.amount ELSE 0 END),0) paid_out,COALESCE(SUM(CASE WHEN m.transaction_date<=? THEN m.amount ELSE 0 END),0) closing FROM accounts a LEFT JOIN money_ledger m ON m.account_id=a.id GROUP BY a.id', (start, start, end, start, end, end))
@@ -115,9 +172,28 @@ class ReportService:
 
     def dashboard(self, day=None):
         day = day or today()
-        daily = next(iter(self.sales_summary(day, day)), dict(sales=0, quantity=0, receipts=0, collections=0, credit_sales=0, returns=0, net_sales=0))
+        daily = next((row for row in self.sales_summary(day, day) if row['period']==day),
+                     dict(sales=0, quantity=0, receipts=0, collections=0, credit_sales=0, returns=0, net_sales=0))
         balances = self.outstanding()
-        return dict(today=daily, month=self.period_profit(day[:8]+'01', day), stock=StockService(self.db).totals(), receivable=sum(max(r['balance'], 0) for r in balances),customer_credit=sum(max(-r['balance'],0) for r in balances),payable=sum(max(r['balance'],0) for r in self.supplier_outstanding()))
+        month_start = day[:8]+'01'
+        month = self.period_profit(month_start,day)
+        month['invoice_count'] = self.db.one("""
+            SELECT COUNT(*) n FROM sales WHERE status='POSTED' AND date_basis!='UNKNOWN'
+              AND transaction_date BETWEEN ? AND ?
+        """, (month_start,day))['n']
+        quantities = self.db.one("""
+            SELECT
+              (SELECT COALESCE(SUM(i.quantity),0) FROM sales s JOIN sale_items i ON i.sale_id=s.id
+               WHERE s.status='POSTED' AND s.date_basis!='UNKNOWN' AND s.transaction_date BETWEEN ? AND ?) sold,
+              (SELECT COALESCE(SUM(i.quantity),0) FROM returns r JOIN return_items i ON i.return_id=r.id
+               WHERE r.status='POSTED' AND r.date_basis!='UNKNOWN' AND r.transaction_date BETWEEN ? AND ?) returned
+        """, (month_start,day,month_start,day))
+        month['net_quantity'] = quantities['sold']-quantities['returned']
+        return dict(today=daily, month=month, stock=StockService(self.db).totals(),
+                    receivable=sum(max(r['balance'],0) for r in balances),
+                    customer_credit=sum(max(-r['balance'],0) for r in balances),
+                    payable=sum(max(r['balance'],0) for r in self.supplier_outstanding()),
+                    outstanding_customers=[row for row in balances if row['balance']>0][:5])
 
     def recent(self):
         return self.db.rows("SELECT * FROM (SELECT 'Sale' kind,transaction_date,invoice_number reference,customer_snapshot description,total amount,created_at FROM sales WHERE status='POSTED' UNION ALL SELECT 'Purchase',transaction_date,reference,supplier_snapshot,total,created_at FROM purchase_batches WHERE status='POSTED' UNION ALL SELECT 'Collection',transaction_date,'PAY-'||id,party_snapshot,amount,created_at FROM payments WHERE purpose='CUSTOMER_PAYMENT' AND voided_at IS NULL UNION ALL SELECT 'Return',transaction_date,'R-'||id,customer_snapshot,total,created_at FROM returns WHERE status='POSTED' UNION ALL SELECT CASE WHEN r.kind='CANCELLATION' THEN 'Purchase cancellation' ELSE 'Stock return' END,r.transaction_date,'PR-'||r.id,b.reference||' · '||b.supplier_snapshot,r.supplier_credit,r.created_at FROM purchase_returns r JOIN purchase_batches b ON b.id=r.purchase_batch_id UNION ALL SELECT CASE WHEN f.payer_kind='SUPPLIER' THEN 'Supplier refund' ELSE 'Carry refund' END,f.transaction_date,COALESCE(NULLIF(f.reference,''),'PREF-'||f.id),b.reference||' · '||b.supplier_snapshot,f.amount,f.created_at FROM purchase_refunds f JOIN purchase_returns r ON r.id=f.purchase_return_id JOIN purchase_batches b ON b.id=r.purchase_batch_id) ORDER BY created_at DESC LIMIT 12")

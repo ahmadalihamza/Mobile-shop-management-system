@@ -42,7 +42,7 @@ class PartyService:
             audit(c, 'SAVE', 'party', party_id)
             return party_id
 
-    def search(self, query='', role=None, limit=200, offset=0, active_only=False):
+    def search(self, query='', role=None, limit=200, offset=0, active_only=False, *, include_balances=True):
         clauses, params = ['1=1'], []
         if role in ('is_customer', 'is_supplier'):
             clauses.append(role + '=1')
@@ -53,7 +53,12 @@ class PartyService:
         for token in normalize(query).split():
             clauses.append("(instr(replace(normalized_name,' ',''),?)>0 OR instr(phone,?)>0)")
             params.extend([token, token])
-        return self.db.rows('SELECT p.*,(SELECT COUNT(*) FROM parties other WHERE other.normalized_name=p.normalized_name) AS name_count,COALESCE((SELECT SUM(amount) FROM party_ledger WHERE party_id=p.id),0) AS balance,COALESCE((SELECT SUM(amount) FROM supplier_ledger WHERE party_id=p.id),0) AS supplier_balance FROM parties p WHERE ' + ' AND '.join(clauses) + ' ORDER BY name,id LIMIT ? OFFSET ?', (*params, limit, offset))
+        balances = (',COALESCE((SELECT SUM(amount) FROM party_ledger WHERE party_id=p.id),0) AS balance'
+                    ',COALESCE((SELECT SUM(amount) FROM supplier_ledger WHERE party_id=p.id),0) AS supplier_balance'
+                    if include_balances else '')
+        return self.db.rows('SELECT p.*,(SELECT COUNT(*) FROM parties other WHERE other.normalized_name=p.normalized_name) AS name_count'
+                            + balances + ' FROM parties p WHERE ' + ' AND '.join(clauses)
+                            + ' ORDER BY name,id LIMIT ? OFFSET ?', (*params, limit, offset))
 
     @staticmethod
     def ledger(role):
@@ -103,7 +108,7 @@ class PartyService:
         buckets={}
         for r in rows:
             if r['kind'] in (kind,'ADJUSTMENT') and r['amount']>0:
-                buckets[(r['kind'],r['source_id'])]=dict(transaction_date=r['transaction_date'],reference=r['reference'],description=r['description'],original_amount=r['amount'],outstanding=r['amount'],created_at=r['created_at'])
+                buckets[(r['kind'],r['source_id'])]=dict(source_id=r['source_id'],kind=r['kind'],transaction_date=r['transaction_date'],reference=r['reference'],description=r['description'],original_amount=r['amount'],outstanding=r['amount'],created_at=r['created_at'])
         payments={r['id']:r for r in self.db.rows('SELECT * FROM payments WHERE party_id=? AND ledger_role=? AND voided_at IS NULL AND transaction_date<=?',(party_id,role,until))}
         returns={r['id']:r for r in self.db.rows("SELECT * FROM returns WHERE customer_id=? AND status='POSTED' AND transaction_date<=?",(party_id,until))} if role=='CUSTOMER' else {}
         purchase_returns={r['id']:r for r in self.db.rows('SELECT r.* FROM purchase_returns r JOIN purchase_batches b ON b.id=r.purchase_batch_id WHERE b.supplier_id=? AND r.transaction_date<=?',(party_id,until))} if role=='SUPPLIER' else {}

@@ -1,6 +1,5 @@
-from decimal import Decimal, ROUND_HALF_UP
 from mobile_desk.database import Database, audit
-from mobile_desk.values import BusinessError, normalize, text, timestamp
+from mobile_desk.values import BusinessError, normalize, text, timestamp, weighted_average
 
 
 class ProductService:
@@ -68,29 +67,24 @@ class ProductService:
                 return {}
             clause = 'WHERE p.id IN (' + ','.join('?' for _ in params) + ')'
         rows = self.db.rows('''
-            WITH supplier_returns AS (
-                SELECT purchase_item_id,SUM(quantity) returned_quantity
-                FROM purchase_return_items
-                GROUP BY purchase_item_id
-            ), acquisitions AS (
-                SELECT i.product_id,i.quantity-COALESCE(r.returned_quantity,0) quantity,
-                       i.landed_unit_cost
-                FROM purchase_items i
+            WITH selected AS MATERIALIZED (SELECT p.id FROM products p ''' + clause + '''),
+            acquisitions AS MATERIALIZED (
+                SELECT i.product_id, i.quantity-(SELECT COALESCE(SUM(r.quantity),0)
+                    FROM purchase_return_items r WHERE r.purchase_item_id=i.id) quantity,
+                    i.landed_unit_cost
+                FROM selected p CROSS JOIN purchase_items i
                 JOIN purchase_batches b ON b.id=i.purchase_batch_id
-                LEFT JOIN supplier_returns r ON r.purchase_item_id=i.id
-                WHERE b.status='POSTED'
+                WHERE i.product_id=p.id AND b.status='POSTED'
             )
             SELECT p.id,COALESCE(SUM(a.quantity),0) purchased_quantity,
-                   COALESCE(SUM(a.quantity*a.landed_unit_cost),0) purchase_cost
-            FROM products p LEFT JOIN acquisitions a ON a.product_id=p.id
-            ''' + clause + ' GROUP BY p.id', params)
+                COALESCE(SUM(a.quantity*a.landed_unit_cost),0) purchase_cost
+            FROM selected p LEFT JOIN acquisitions a ON a.product_id=p.id GROUP BY p.id
+        ''', params)
         return {
             row['id']: dict(
                 purchased_quantity=row['purchased_quantity'],
                 purchase_cost=row['purchase_cost'],
-                average_purchase_price=int((Decimal(row['purchase_cost']) /
-                    row['purchased_quantity']).quantize(Decimal('1'), rounding=ROUND_HALF_UP))
-                    if row['purchased_quantity'] else None,
+                average_purchase_price=weighted_average(row['purchase_cost'], row['purchased_quantity']),
             )
             for row in rows
         }

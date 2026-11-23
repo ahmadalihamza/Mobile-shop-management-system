@@ -92,11 +92,11 @@ def test_navigation_and_all_reports(app,shop):
     window=MainWindow(shop)
     # Any navigation exception opens a modal; fail immediately instead.
     window.safe=lambda action:action()
-    for i in range(9):
+    for i in range(7):
         window.navigate(i)
         app.processEvents()
         assert window.stack.currentWidget() is window.pages[i]
-    reports=window.pages[7]
+    reports=window.pages[5]
     for name in REPORTS:
         reports.kind.setCurrentText(name)
         reports.refresh()
@@ -108,6 +108,8 @@ def test_local_purchase_hides_exchange_fields(app,shop):
     d=TransactionDialog(None,shop,True)
     assert d.table.isColumnHidden(3)
     d.type.setCurrentIndex(1)
+    assert d.table.isColumnHidden(3)
+    d.rate_hint.setChecked(True)
     assert not d.table.isColumnHidden(3)
     assert not any('imei' in w.text().lower() for w in d.findChildren(type(d.error)))
 
@@ -134,10 +136,11 @@ def test_purchase_unchecked_payment_and_currency_guard(app,shop):
 def test_cached_page_party_filters_refresh(app,shop):
     window=MainWindow(shop)
     window.safe=lambda action:action()
-    for page in (1,2,7):
+    for page in (1,2,5):
         window.navigate(page)
     identity=shop.parties.save('New dealer',is_supplier=True)
-    for page,attribute in ((1,'customer'),(2,'supplier'),(7,'party')):
+    window.pages[5].kind.setCurrentText('Customer Statement')
+    for page,attribute in ((1,'customer'),(2,'supplier'),(5,'party')):
         window.navigate(page)
         assert getattr(window.pages[page],attribute).findData(identity)>0
     window.close()

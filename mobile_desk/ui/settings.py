@@ -1,7 +1,7 @@
 from pathlib import Path
 import json
 import logging
-from PySide6.QtWidgets import QWidget,QVBoxLayout,QFormLayout,QHBoxLayout,QLineEdit,QFileDialog,QMessageBox,QTabWidget
+from PySide6.QtWidgets import QWidget,QVBoxLayout,QFormLayout,QHBoxLayout,QLineEdit,QFileDialog,QMessageBox,QTabWidget,QScrollArea
 from mobile_desk.ui.common import label,button,confirm,DataTable
 from mobile_desk.ui.people_money import RateDialog
 from mobile_desk.database import audit
@@ -14,7 +14,14 @@ class SettingsPage(QWidget):
     def __init__(self,host,ctx):
         super().__init__()
         self.host,self.ctx=host,ctx
-        layout=QVBoxLayout(self)
+        outer=QVBoxLayout(self)
+        outer.setContentsMargins(0,0,0,0)
+        scroll=QScrollArea()
+        scroll.setWidgetResizable(True)
+        outer.addWidget(scroll)
+        body=QWidget()
+        scroll.setWidget(body)
+        layout=QVBoxLayout(body)
         layout.setContentsMargins(26,22,26,20)
         layout.setSpacing(14)
         layout.addWidget(label('Settings','title'))
@@ -72,6 +79,8 @@ class SettingsPage(QWidget):
         ol.addWidget(self.owner_info)
         self.owner_button=button('Set owner password',self.configure_owner,True)
         ol.addWidget(self.owner_button)
+        ol.addWidget(button('Activity history',host.audit_history))
+        ol.addWidget(button('Undo Last Entry',host.undo_latest))
         ol.addWidget(label('Reset All Business Data','section'))
         ol.addWidget(label('Use this to clear practice entries or start the shop completely fresh. Purchases, sales, stock, contacts, payments and opening balances are cleared. Shop details, account names, catalogue and owner credentials are kept. A verified safety backup is required before clearing.','subtitle',True))
         ol.addWidget(label('For a new month, keep your existing stock and balances and change the report dates. For one wrong entry, use Undo Last Entry or Undo selected entry.','notice',True))

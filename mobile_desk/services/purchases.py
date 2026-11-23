@@ -117,7 +117,7 @@ class PurchaseService:
             audit(c,'RECEIVE','purchase',identity,'Shipment physically received on '+day)
             return identity
 
-    def list(self, start='1900-01-01', end='9999-12-31', query='', kind='', supplier_id=None, limit=200, offset=0):
+    def list(self, start='1900-01-01', end='9999-12-31', query='', kind='', supplier_id=None, limit=200, offset=0, *, posted_only=False):
         clauses = ['transaction_date BETWEEN ? AND ?', '(reference LIKE ? OR supplier_snapshot LIKE ? OR legacy_reference LIKE ? OR EXISTS(SELECT 1 FROM purchase_items i WHERE i.purchase_batch_id=purchase_batches.id AND i.product_description_snapshot LIKE ?))']
         params = [start, end, '%'+query+'%', '%'+query+'%', '%'+query+'%', '%'+query+'%']
         if kind:
@@ -126,7 +126,10 @@ class PurchaseService:
         if supplier_id:
             clauses.append('supplier_id=?')
             params.append(supplier_id)
+        if posted_only:
+            clauses.append("status='POSTED'")
         return self.db.rows("""SELECT purchase_batches.*,
+            COALESCE((SELECT SUM(quantity) FROM purchase_items WHERE purchase_batch_id=purchase_batches.id),0) quantity,
             COALESCE((SELECT GROUP_CONCAT(product_description_snapshot, '; ')
                 FROM (SELECT product_description_snapshot FROM purchase_items
                       WHERE purchase_batch_id=purchase_batches.id

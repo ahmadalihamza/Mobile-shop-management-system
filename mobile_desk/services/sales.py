@@ -8,7 +8,7 @@ class SaleService:
     def __init__(self, db: Database):
         self.db = db
 
-    def post(self, day, lines, *, customer_id=None, payments=(), notes='', legacy_reference='', key=None):
+    def post(self, day, lines, *, customer_id=None, payments=(), notes='', legacy_reference='', bill_book_number='', key=None):
         business_date(day)
         if not lines:
             raise BusinessError('Add at least one product.')
@@ -22,10 +22,18 @@ class SaleService:
         if total > paid and not customer_id:
             raise BusinessError('Select a customer for the unpaid amount.')
         payload = dict(day=day, lines=lines, customer_id=customer_id, payments=list(payments), notes=notes, legacy_reference=legacy_reference)
+        bill_book_number = text(bill_book_number, 'Bill book number', limit=80)
+        if bill_book_number:
+            payload['bill_book_number'] = bill_book_number
         with self.db.connect(write=True) as c:
             prior = remember(c, key, payload)
             if prior:
                 return prior
+            if bill_book_number and c.execute(
+                "SELECT 1 FROM sales WHERE bill_book_number!='' AND bill_book_number=? COLLATE NOCASE",
+                (bill_book_number,),
+            ).fetchone():
+                raise BusinessError('This bill book number is already recorded. Use a different number or leave it blank.')
             customer = require(c, 'parties', customer_id, 'is_customer')['name'] if customer_id else 'Walk-in'
             settings = {r['key']: r['value'] for r in c.execute("SELECT * FROM settings WHERE key IN('invoice_prefix','next_invoice')")}
             seq = int(settings['next_invoice'])
@@ -34,6 +42,8 @@ class SaleService:
             number = settings['invoice_prefix'] + str(seq).zfill(6)
             c.execute("UPDATE settings SET value=? WHERE key='next_invoice'", (str(seq+1),))
             identity = c.execute('INSERT INTO sales(invoice_number,transaction_date,customer_id,customer_snapshot,subtotal,total,notes,legacy_reference,created_at) VALUES(?,?,?,?,?,?,?,?,?)', (number, day, customer_id, customer, total, total, text(notes, limit=2000), text(legacy_reference), timestamp())).lastrowid
+            if bill_book_number:
+                c.execute('UPDATE sales SET bill_book_number=? WHERE id=?', (bill_book_number, identity))
             for product_id, qty, rate in prepared:
                 product = require(c, 'products', product_id)
                 chronological(c, product_id, day)
@@ -46,13 +56,23 @@ class SaleService:
             remember(c, key, payload, identity)
             return identity
 
-    def list(self, start='1900-01-01', end='9999-12-31', query='', customer_id=None, limit=200, offset=0):
-        clauses = ['s.transaction_date BETWEEN ? AND ?', '(s.invoice_number LIKE ? OR s.customer_snapshot LIKE ? OR s.legacy_reference LIKE ? OR s.notes LIKE ? OR EXISTS(SELECT 1 FROM sale_items si WHERE si.sale_id=s.id AND si.product_description_snapshot LIKE ?))']
-        params = [start, end, '%'+query+'%', '%'+query+'%', '%'+query+'%', '%'+query+'%', '%'+query+'%']
+    def list(self, start='1900-01-01', end='9999-12-31', query='', customer_id=None, limit=200, offset=0, *, posted_only=False):
+        clauses = ['s.transaction_date BETWEEN ? AND ?']
+        params = [start, end]
+        if query:
+            clauses.append('(s.invoice_number LIKE ? OR s.bill_book_number LIKE ? OR s.customer_snapshot LIKE ? OR s.legacy_reference LIKE ? OR s.notes LIKE ? OR EXISTS(SELECT 1 FROM sale_items si WHERE si.sale_id=s.id AND si.product_description_snapshot LIKE ?))')
+            params.extend(['%'+query+'%'] * 6)
+        if posted_only:
+            clauses.append("s.status='POSTED'")
         if customer_id:
             clauses.append('s.customer_id=?')
             params.append(customer_id)
-        return self.db.rows("SELECT s.*,COALESCE((SELECT SUM(amount) FROM payments p WHERE p.sale_id=s.id AND p.purpose='SALE_RECEIPT' AND p.voided_at IS NULL),0) AS paid,COALESCE((SELECT SUM(quantity) FROM sale_items WHERE sale_id=s.id),0) AS quantity,COALESCE((SELECT SUM(total) FROM returns r WHERE r.original_sale_id=s.id AND r.status='POSTED'),0) AS returned FROM sales s WHERE " + ' AND '.join(clauses) + ' ORDER BY s.transaction_date DESC,s.id DESC LIMIT ? OFFSET ?', (*params, limit, offset))
+        return self.db.rows("""SELECT s.*,
+            COALESCE((SELECT SUM(amount) FROM payments p WHERE p.sale_id=s.id AND p.purpose='SALE_RECEIPT' AND p.voided_at IS NULL),0) AS paid,
+            COALESCE((SELECT SUM(quantity) FROM sale_items WHERE sale_id=s.id),0) AS quantity,
+            COALESCE((SELECT SUM(total) FROM returns r WHERE r.original_sale_id=s.id AND r.status='POSTED'),0) AS returned,
+            COALESCE((SELECT GROUP_CONCAT(DISTINCT product_description_snapshot) FROM sale_items WHERE sale_id=s.id),'') AS product_names
+            FROM sales s WHERE """ + ' AND '.join(clauses) + ' ORDER BY s.transaction_date DESC,s.id DESC LIMIT ? OFFSET ?', (*params, limit, offset))
 
     def details(self, identity):
         header = self.db.one('SELECT * FROM sales WHERE id=?', (identity,))

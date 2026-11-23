@@ -1,4 +1,8 @@
-# Trading rules — 1.3.0
+# Trading rules — 1.7.0
+
+- Purchase average divides net landed acquisition cost by net acquired pieces, including incoming stock. Available average divides physical stock cost by pieces on hand. Selling average divides net sales by net sold pieces in the selected period. Returns enter that period on their own recorded dates. A nonpositive denominator or negative net revenue makes the selling average unavailable.
+- A sale preview uses the same eligible lot ordering as the book entry. Only the saved FIFO allocations determine reported cost and profit. Dated receipts and later collections affect accounts, while sales and returns determine net sales.
+- Optional bill-book numbers are stored alongside generated invoice IDs. Duplicate nonblank bill-book numbers, including numbers on voided invoices, are rejected.
 
 - Quantity inventory, no IMEI requirement. A catalogue reference and a shop product are independent.
 - Money is integer paisa. RMB price/rate are exact decimals; converted PKR unit cost rounds once to paisa, then quantity multiplies that cost. Additional PKR cost per unit is included in landed stock cost.

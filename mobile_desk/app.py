@@ -42,8 +42,14 @@ def smoke_capture(window,output):
     results=[]
     try:
         window.resize(1366,768)
-        for i,title in enumerate(('dashboard','sales','purchases','stock','suppliers','customers','money','reports','settings')):
+        for i,title in enumerate(('dashboard','sales','purchases','stock','accounts','reports','settings')):
             window.navigate(i)
+            app.processEvents()
+            window.grab().save(str(output/(title+'.png')))
+            results.append(title)
+        window.navigate(4)
+        for tab,title in ((1,'suppliers'),(2,'money')):
+            window.pages[4].setCurrentIndex(tab)
             app.processEvents()
             window.grab().save(str(output/(title+'.png')))
             results.append(title)
@@ -61,10 +67,12 @@ def smoke_capture(window,output):
                 dialog.entries[0]['qty'].setValue(3)
                 if not dialog.purchase:
                     dialog.pay_full()
+                    dialog.preview_margin()
             dialog.show()
             app.processEvents()
             dialog.grab().save(str(output/(name+'.png')))
             results.append(name)
+            dialog.hide()
             dialog.close()
         chooser=PartyChooser(window,window.ctx,supplier=True,allow_new=True)
         chooser.show()

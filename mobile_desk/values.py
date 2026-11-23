@@ -58,6 +58,13 @@ def business_date(value: str) -> str:
         raise BusinessError('Enter a valid date in YYYY-MM-DD format.') from None
 
 
+def weighted_average(total: int, pieces: int) -> int | None:
+    """Round a displayed PKR unit value to paisa once."""
+    if pieces <= 0 or total < 0:
+        return None
+    return int((Decimal(total) / pieces).quantize(Decimal(1), rounding=ROUND_HALF_UP))
+
+
 def today() -> str:
     return date.today().isoformat()
 

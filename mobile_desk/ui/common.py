@@ -3,7 +3,7 @@ from html import escape
 import logging
 from pathlib import Path
 import uuid
-from PySide6.QtCore import QDate, Qt, QTimer, Signal
+from PySide6.QtCore import QDate, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QRegularExpressionValidator, QTextDocument, QPageSize
 from PySide6.QtCore import QRegularExpression
 from PySide6.QtWidgets import (QWidget,QDialog,QLabel,QPushButton,QLineEdit,QComboBox,QDateEdit,QVBoxLayout,QHBoxLayout,QFormLayout,QTableWidget,QTableWidgetItem,QHeaderView,QAbstractItemView,QMessageBox,QFileDialog,QTextBrowser,QScrollArea)
@@ -15,11 +15,12 @@ STYLE = '''
 * {font-family:"Segoe UI"; font-size:14px; color:#183b32;}
 QMainWindow,QDialog {background:#f5f7f3;}
 QWidget#sidebar {background:#173e34;}
-QLabel#brand {color:#ffffff; font-size:25px; font-weight:700; padding:16px 12px;}
+QLabel#brand {color:#ffffff; font-size:25px; font-weight:700; padding:10px 12px;}
 QLabel#sideNote {color:#b5d0c4; font-size:12px; padding:12px;}
-QPushButton#nav {background:transparent; color:#d5e6dd; border:0; text-align:left; padding:14px 16px; border-radius:7px;}
+QPushButton#nav {background:transparent; color:#d5e6dd; border:0; text-align:left; padding:10px 16px; border-radius:7px;}
 QPushButton#nav:checked {background:#35614f; color:white; font-weight:600;}
 QPushButton#nav:hover {background:#2b5547;}
+QPushButton#reportChoice:checked {background:#e1ede4; border-color:#769d84;}
 QLabel#title {font-size:27px; font-weight:650; color:#173e34;}
 QLabel#subtitle {color:#687e72; font-size:13px;}
 QLabel#section {font-size:18px; font-weight:600;}
@@ -51,6 +52,11 @@ QTabBar::tab:selected {background:#fff; color:#256448; font-weight:600;}
 QCheckBox {spacing:8px; padding:4px;}
 QToolTip {color:#183b32; background:#fff; border:1px solid #cad9cd;}
 '''.replace('DROPDOWN_IMAGE',resource_path('dropdown.svg').as_posix())
+
+
+def fit_window(window, width, height):
+    available = window.screen().availableGeometry().size() - QSize(16, 40)
+    window.resize(QSize(width, height).boundedTo(available))
 
 
 def label(value, name='', wrap=False):
@@ -102,7 +108,7 @@ def combo(rows=(), label_key='name', optional=None, selected=None):
 def refresh_party_combo(widget, ctx, role, placeholder):
     """Refresh saved page filters without losing selection or emitting recursive refreshes."""
     selected=widget.currentData()
-    rows=ctx.parties.search(role=role,limit=10000)
+    rows=ctx.parties.search(role=role,limit=10000,include_balances=False)
     options=[(placeholder,None)]+[(party_selection_name(r),r['id']) for r in rows]
     if options==[(widget.itemText(i),widget.itemData(i)) for i in range(widget.count())]:
         return
@@ -125,7 +131,7 @@ def party_selection_name(row):
 
 
 def party_combo(ctx, role, placeholder, selected=None):
-    rows=ctx.parties.search(role=role,limit=10000,active_only=True)
+    rows=ctx.parties.search(role=role,limit=10000,active_only=True,include_balances=False)
     for row in rows:
         row['selection_name']=party_selection_name(row)
     widget=combo(rows,'selection_name',optional=placeholder,selected=selected)
@@ -237,6 +243,10 @@ class EntryDialog(QDialog):
         self.form.addRow(title,widget)
         return widget
 
+    def showEvent(self, event):
+        fit_window(self, self.width(), self.height())
+        super().showEvent(event)
+
     def commit(self):
         if not self.save_button.isEnabled():
             return
@@ -263,7 +273,8 @@ class ListPage(QWidget):
         self.layout.setContentsMargins(26,22,26,20)
         self.layout.setSpacing(14)
         self.layout.addWidget(label(title,'title'))
-        self.layout.addWidget(label(subtitle,'subtitle',True))
+        if subtitle:
+            self.layout.addWidget(label(subtitle,'subtitle',True))
         self.actions=QHBoxLayout()
         for i,(name,handler) in enumerate(actions):
             self.actions.addWidget(button(name,handler,i==0))

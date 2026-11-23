@@ -1,7 +1,8 @@
 from decimal import Decimal
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt,QTimer
+from PySide6.QtGui import QShortcut,QKeySequence
 from PySide6.QtWidgets import (QDialog,QWidget,QLineEdit,QComboBox,QHBoxLayout,QVBoxLayout,QGridLayout,QSpinBox,QTableWidget,QTableWidgetItem,QHeaderView,QGroupBox,QCheckBox)
-from mobile_desk.ui.common import EntryDialog,AmountEdit,button,label,combo,date_edit,day,DataTable,party_combo,select_saved_party
+from mobile_desk.ui.common import EntryDialog,AmountEdit,button,label,combo,date_edit,day,DataTable,party_combo,select_saved_party,confirm
 from mobile_desk.ui.products import ProductPicker
 from mobile_desk.values import BusinessError,money,currency,amount_text
 from mobile_desk.services.purchases import price_line
@@ -13,7 +14,7 @@ class TransactionDialog(EntryDialog):
         self.ctx=ctx
         self.purchase=purchase
         self.entries=[]
-        self.resize(1120,780)
+        self.resize(1120,685)
         self.save_button.setText('Save Purchase' if purchase else 'Save Sale')
         header=QGridLayout()
         self.body.addLayout(header)
@@ -43,13 +44,12 @@ class TransactionDialog(EntryDialog):
             if supplier.isdigit():
                 self.party.setCurrentIndex(max(0,self.party.findData(int(supplier))))
             self.reference=QLineEdit()
-            header.addWidget(label('Batch reference'),1,2)
-            header.addWidget(self.reference,1,3)
             self.reference.setPlaceholderText('Leave blank for an automatic reference')
             self.arrival=QComboBox()
             self.arrival.addItem('Stock has arrived','RECEIVED')
             self.arrival.addItem('Awaiting arrival — unavailable for sale','IN_TRANSIT')
-            header.addWidget(label('Shipment'),2,0)
+            self.arrival_label=label('Shipment')
+            header.addWidget(self.arrival_label,2,0)
             header.addWidget(self.arrival,2,1,1,3)
             self.defaults=QWidget()
             defaults=QHBoxLayout(self.defaults)
@@ -68,7 +68,9 @@ class TransactionDialog(EntryDialog):
             self.carry_currency.setToolTip('China carry is the total charge for the whole stack, entered once. Choose PKR only when the carrier actually charges PKR. Each line uses its saved exchange rate.')
             defaults.addWidget(self.carry_currency)
             self.body.addWidget(self.defaults)
-            self.rate_hint=label('Each product row is one stack. Enter the whole stack’s carry once; add the same product again for another stack. The saved rate converts the charge and never changes old costs.','subtitle',True)
+            self.rate_hint=QCheckBox('Different rates by stack')
+            self.rate_hint.setToolTip('Each row keeps its saved exchange rate. Add a separate row for each stack.')
+            self.rate_hint.toggled.connect(lambda checked:self.table.setColumnHidden(3,not checked))
             self.body.addWidget(self.rate_hint)
         line_bar=QHBoxLayout()
         self.add_button=button('+ Add product  (Alt+A)',self.pick_product,True)
@@ -82,7 +84,7 @@ class TransactionDialog(EntryDialog):
         self.table.setHorizontalHeaderLabels(headers)
         self.table.verticalHeader().setVisible(False)
         self.table.verticalHeader().setDefaultSectionSize(48)
-        self.table.setMinimumHeight(180)
+        self.table.setMinimumHeight(155)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(0,QHeaderView.ResizeMode.Stretch)
         self.body.addWidget(self.table,1)
@@ -93,8 +95,7 @@ class TransactionDialog(EntryDialog):
         if not purchase:
             self.payment_mode=QComboBox()
             self.payment_mode.addItems(['Paid in full','Part payment','Pay later / credit'])
-            self.body.addWidget(self.payment_mode)
-        group=QGroupBox('Payment now' if not purchase else 'Payment from Cash / Bank (optional)')
+        group=QGroupBox('Payment from Cash / Bank' if purchase else '')
         self.payment_group=group
         grid=QGridLayout(group)
         self.second_payment=QWidget()
@@ -113,7 +114,8 @@ class TransactionDialog(EntryDialog):
                 second_layout.addWidget(amount)
                 second_layout.addWidget(account)
             self.payments.append((amount,account))
-        grid.addWidget(button('Pay full total',self.pay_full),0,3)
+        self.pay_full_button=button('Pay full total',self.pay_full)
+        grid.addWidget(self.pay_full_button,0,3)
         split=QCheckBox('Split between two accounts')
         split.toggled.connect(self.second_payment.setVisible)
         split.toggled.connect(lambda checked:self.payments[1][0].setText(self.payments[1][0].text() if checked else '0'))
@@ -124,15 +126,23 @@ class TransactionDialog(EntryDialog):
             self.record_payment=QCheckBox('Record a payment from Cash / Bank now')
             self.record_payment.toggled.connect(group.setVisible)
             self.record_payment.toggled.connect(self.calculate)
-            self.body.addWidget(self.record_payment)
             group.setVisible(False)
-        self.body.addWidget(group)
+            self.body.insertWidget(self.body.indexOf(self.table),self.record_payment)
+            self.body.insertWidget(self.body.indexOf(self.table),group)
+        else:
+            payment_bar=QHBoxLayout()
+            payment_bar.addWidget(self.payment_mode)
+            payment_bar.addWidget(group,1)
+            self.body.insertLayout(self.body.indexOf(self.table),payment_bar)
         self.carry_billed=QCheckBox('Additional costs are included in the supplier bill')
         self.extra_costs=QCheckBox('Add transport / carry costs')
         self.extra_costs.toggled.connect(self.costs_changed)
         if purchase:
-            self.body.addWidget(self.extra_costs)
-            self.body.addWidget(self.carry_billed)
+            cost_options=QHBoxLayout()
+            cost_options.addWidget(self.extra_costs)
+            cost_options.addWidget(self.carry_billed)
+            cost_options.addStretch()
+            self.body.insertLayout(self.body.indexOf(self.table),cost_options)
             self.carry_billed.toggled.connect(self.calculate)
             self.carry_billed.hide()
             self.transport_payment=QWidget()
@@ -154,22 +164,95 @@ class TransactionDialog(EntryDialog):
         self.notes.setPlaceholderText('Optional')
         self.legacy=QLineEdit()
         self.legacy.hide()
+        if not purchase:
+            self.bill_book=QLineEdit()
+            self.bill_book.setMaxLength(80)
+            advanced_layout.addWidget(label('Bill book number'))
+            advanced_layout.addWidget(self.bill_book,1)
+        else:
+            advanced_layout.addWidget(label('Parcel reference'))
+            advanced_layout.addWidget(self.reference,1)
         advanced_layout.addWidget(label('Notes'))
-        advanced_layout.addWidget(self.notes,2)
-        extra=QCheckBox('Add notes')
+        advanced_layout.addWidget(self.notes,1)
+        extra=QCheckBox('Add reference or notes')
         extra.toggled.connect(advanced.setVisible)
         self.body.addWidget(extra)
         self.body.addWidget(advanced)
         advanced.hide()
+        self.save_shortcut=QShortcut(QKeySequence('Ctrl+S'),self)
+        self.save_shortcut.activated.connect(self.commit)
         self.save_handler=self.save
         if self.payment_mode:
+            self.party.currentIndexChanged.connect(self.update_customer_visibility)
             self.payment_mode.currentIndexChanged.connect(self.mode_changed)
+            self.reference_prices=label('','subtitle',True)
+            self.reference_prices.hide()
+            self.layout.insertWidget(2,self.reference_prices)
+            self.estimate=label('','subtitle',True)
+            self.layout.insertWidget(5,self.estimate)
+            self.estimate_timer=QTimer(self)
+            self.estimate_timer.setSingleShot(True)
+            self.estimate_timer.timeout.connect(self.preview_margin)
+            self.table.currentCellChanged.connect(self.show_prices)
+            self.date.dateChanged.connect(self.show_prices)
+            self.mode_changed()
         if self.type:
             self.type.currentIndexChanged.connect(self.type_changed)
             self.carry_currency.currentIndexChanged.connect(self.carry_currency_changed)
             self.type_changed()
+            self.party.currentIndexChanged.connect(self.update_supplier_balance)
+            self.update_supplier_balance()
         self.calculate()
         self.add_button.setFocus()
+
+    def reject(self):
+        optional_reference=self.reference.text() if self.purchase else self.bill_book.text()
+        if self.isVisible() and (self.entries or self.notes.text() or optional_reference):
+            if not confirm(self,'Discard entry?','Discard the unsaved entry?'):
+                return
+        super().reject()
+
+    def update_supplier_balance(self):
+        identity=self.party.currentData()
+        self.supplier_open=self.ctx.parties.balance(identity,role='SUPPLIER') if identity else None
+        self.calculate()
+
+    def show_prices(self,*args):
+        index=self.table.currentRow()
+        if not 0<=index<len(self.entries):
+            self.reference_prices.clear()
+            self.reference_prices.hide()
+            return
+        identity=self.entries[index]['product_id']
+        date=day(self.date)
+        row=self.ctx.stock.current(limit=1,product_id=identity)[0]
+        performance=self.ctx.reports.model_sales(date[:8]+'01',date,product_ids=[identity])
+        last=self.ctx.db.one("""
+            SELECT i.selling_rate,s.transaction_date FROM sale_items i JOIN sales s ON s.id=i.sale_id
+            WHERE i.product_id=? AND s.status='POSTED' AND s.date_basis!='UNKNOWN' AND s.transaction_date<=?
+            ORDER BY s.transaction_date DESC,s.id DESC,i.id DESC LIMIT 1
+        """,(identity,date))
+        def price(value):
+            return '—' if value is None else currency(value)
+        self.reference_prices.setText(f"{row['quantity']} available · Historical purchase average PKR {price(row['average_purchase_price'])} · "
+            f"Last sale PKR {price(last['selling_rate'] if last else None)}\n"
+            f"Selling average PKR {price(performance[0]['selling_average'] if performance else None)} "
+            f"({date[:8]}01 to {date})")
+        self.reference_prices.show()
+        self.estimate_timer.start(120)
+
+    def preview_margin(self):
+        lines=self.lines()
+        try:
+            if not lines or any(money(line['selling_rate'])<=0 for line in lines):
+                self.estimate.clear()
+                return
+            total=self.total()
+            cost=self.ctx.stock.estimate_fifo(day(self.date),lines)
+            self.estimate.setText('FIFO estimate unavailable for the selected date or quantity.' if cost is None else
+                f'Estimated FIFO gross profit PKR {currency(total-cost)}')
+        except BusinessError:
+            self.estimate.clear()
 
     def add_party(self):
         from mobile_desk.ui.people_money import PartyChooser
@@ -189,10 +272,12 @@ class TransactionDialog(EntryDialog):
         foreign=self.type.currentData()=='CHINA_IMPORT'
         self.defaults.setVisible(foreign)
         self.rate_hint.setVisible(foreign)
-        self.table.setColumnHidden(3,not foreign)
+        self.table.setColumnHidden(3,not foreign or not self.rate_hint.isChecked())
         self.table.horizontalHeaderItem(2).setText('Price / unit (RMB)' if foreign else 'Price / unit (PKR)')
         opening=self.type.currentData()=='OPENING'
         self.arrival.setEnabled(not opening)
+        self.arrival.setVisible(not opening)
+        self.arrival_label.setVisible(not opening)
         if opening:
             self.arrival.setCurrentIndex(0)
         self.carry_currency.setCurrentIndex(0 if foreign else 1)
@@ -225,12 +310,17 @@ class TransactionDialog(EntryDialog):
         mode=self.payment_mode.currentIndex()
         self.payments[0][0].setReadOnly(mode==0)
         self.payment_group.setVisible(mode!=2)
+        self.update_customer_visibility()
+        self.pay_full_button.setVisible(mode==1)
         if mode==2:
             for amount,_ in self.payments:
                 amount.setText('0')
         elif mode==0:
             self.pay_full()
         self.calculate()
+
+    def update_customer_visibility(self):
+        self.party.setVisible(self.payment_mode.currentIndex()!=0 or self.party.currentData() is not None)
 
     def pick_product(self):
         picker=ProductPicker(self,self.ctx)
@@ -268,6 +358,8 @@ class TransactionDialog(EntryDialog):
             self.carry_currency.setEnabled(False)
             self.type.setToolTip('Remove all product lines before changing purchase currency.')
         self.table.selectRow(row)
+        if not self.purchase:
+            self.show_prices()
         self.calculate()
         qty.setFocus()
         qty.selectAll()
@@ -312,10 +404,14 @@ class TransactionDialog(EntryDialog):
             total=0
             foreign=Decimal(0)
             foreign_carry=Decimal(0)
+            cargo=0
+            pieces=0
             for i,row in enumerate(self.lines()):
+                pieces+=row['quantity']
                 if self.purchase:
                     priced=price_line(row,self.type.currentData())
                     line_total=priced['line_total_cost']
+                    cargo+=priced['additional_cost_total']
                     if priced['foreign_unit_price'] is not None:
                         foreign+=Decimal(priced['foreign_unit_price'])*row['quantity']
                     if priced['carry_currency']=='CNY':
@@ -327,7 +423,7 @@ class TransactionDialog(EntryDialog):
                     line_total=row['quantity']*money(row['selling_rate'])
                     self.output(i,3,currency(line_total))
                 total+=line_total
-            bill=self.bill_total()
+            bill=(0 if self.type.currentData()=='OPENING' else total-(0 if self.carry_billed.isChecked() else cargo)) if self.purchase else total
             if self.purchase:
                 self.transport_payment.setVisible(self.extra_costs.isChecked() and self.type.currentData()!='OPENING' and not self.carry_billed.isChecked())
             if self.payment_mode and self.payment_mode.currentIndex()==0:
@@ -337,8 +433,18 @@ class TransactionDialog(EntryDialog):
                 amount.setText(amount_text(max(0,bill-money(self.payments[1][0].value()))))
                 amount.blockSignals(False)
             paid=sum(money(p['amount']) for p in self.payment_lines())
-            self.totals.setText((f'Supplier bill PKR {currency(bill)}     Stock cost PKR {currency(total)}' if self.purchase else f'Total PKR {currency(total)}')+(f'\nPhones RMB {foreign:,.2f} · Stack carry RMB {foreign_carry:,.2f}' if self.purchase and self.type.currentData()=='CHINA_IMPORT' else ''))
-            self.balance.setText(f'Paid now: PKR {currency(paid)}     '+('Supplier remaining: ' if self.purchase else 'Customer remaining: ')+f'PKR {currency(bill-paid)}')
+            self.totals.setText((f'{pieces:,} pieces · Supplier bill PKR {currency(bill)} · Landed PKR {currency(total)}' if self.purchase else f'{pieces:,} pieces · Total PKR {currency(total)}'))
+            summary=f'Paid now PKR {currency(paid)} · Due on this entry PKR {currency(bill-paid)}'
+            if self.purchase:
+                summary+=f' · Cargo PKR {currency(cargo)}'
+                opening=getattr(self,'supplier_open',None)
+                if opening is not None and self.type.currentData()!='OPENING':
+                    summary+=f' · Supplier balance after entry PKR {currency(opening+bill-paid)}'
+                if self.type.currentData()=='CHINA_IMPORT':
+                    summary+=f'\nPhones RMB {foreign:,.2f} · Stack carry RMB {foreign_carry:,.2f}'
+            else:
+                self.estimate_timer.start(120)
+            self.balance.setText(summary)
             self.error.clear()
         except (BusinessError,ValueError):
             self.totals.setText('Complete the quantity, price and applicable exchange rate.')
@@ -366,7 +472,7 @@ class TransactionDialog(EntryDialog):
             if self.bill_total()>sum(money(p['amount']) for p in payments) and not supplier:
                 raise BusinessError('Choose a supplier to keep the unpaid purchase balance.')
             return self.ctx.purchases.post(day(self.date),self.lines(),purchase_type=self.type.currentData(),supplier_id=supplier,reference=self.reference.text(),default_rate=self.rate.value(),default_carry=self.carry.value(),carry_currency=self.carry_currency.currentData(),received=self.arrival.currentData()=='RECEIVED',carry_billed_to_supplier=self.extra_costs.isChecked() and self.carry_billed.isChecked(),carry_payment=self.carry_paid.value() if self.transport_payment.isVisibleTo(self) else '0',carry_account_id=self.carry_account.currentData(),**common)
-        return self.ctx.sales.post(day(self.date),self.lines(),customer_id=self.selected_party(),**common)
+        return self.ctx.sales.post(day(self.date),self.lines(),customer_id=self.selected_party(),bill_book_number=self.bill_book.text(),**common)
 
     def payment_lines(self):
         if self.purchase and not self.record_payment.isChecked():

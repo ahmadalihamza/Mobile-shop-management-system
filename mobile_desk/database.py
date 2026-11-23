@@ -6,7 +6,7 @@ import sqlite3
 from mobile_desk.values import BusinessError, timestamp
 
 APPLICATION_ID = 1296319025
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 SCHEMA = '''
 CREATE TABLE settings(key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -212,6 +212,14 @@ INSERT INTO schema_history VALUES(5,strftime('%Y-%m-%dT%H:%M:%fZ','now'));
 '''
 
 
+MIGRATIONS[6] = '''
+ALTER TABLE sales ADD COLUMN bill_book_number TEXT NOT NULL DEFAULT '';
+CREATE UNIQUE INDEX sale_bill_book_number ON sales(bill_book_number COLLATE NOCASE) WHERE bill_book_number!='';
+CREATE INDEX product_display_order ON products(custom_name,id);
+INSERT INTO schema_history VALUES(6,strftime('%Y-%m-%dT%H:%M:%fZ','now'));
+'''
+
+
 def audit(c, action: str, entity: str, identity, reason='') -> None:
     c.execute('INSERT INTO audit_log(created_at,action,entity,entity_id,reason) VALUES(?,?,?,?,?)', (timestamp(), action, entity, str(identity), reason))
 
@@ -219,6 +227,7 @@ def audit(c, action: str, entity: str, identity, reason='') -> None:
 class Database:
     def __init__(self, path: Path):
         self.path = Path(path)
+        self.revision = 0
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.initialize()
 
@@ -235,6 +244,7 @@ class Database:
             yield c
             if write:
                 c.commit()
+                self.revision += 1
         except BaseException:
             if write:
                 c.rollback()

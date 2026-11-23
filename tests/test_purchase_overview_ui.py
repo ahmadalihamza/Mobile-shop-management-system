@@ -44,18 +44,18 @@ def test_stock_page_shows_weighted_purchase_average_and_explains_valuation(app, 
     window = MainWindow(shop)
     page = window.stock_page()
     page.refresh()
-    assert page.table.horizontalHeaderItem(3).text() == 'Average Purchase Price (PKR)'
+    assert page.table.horizontalHeaderItem(3).text() == 'Purchase average PKR'
     assert page.table.item(0, 3).text() == '24,187.50'
     assert 'awaiting arrival' in page.table.horizontalHeaderItem(3).toolTip()
     captured = {}
-    window.details = lambda title, subtitle, tables: captured.update(subtitle=subtitle, tables=tables)
+    window.details = lambda title, subtitle, tables, *args, **kwargs: captured.update(subtitle=subtitle, tables=tables)
     window.product_details(page)
-    assert 'Average Purchase Price PKR 24,187.50' in captured['subtitle']
-    assert 'original FIFO costs' in captured['subtitle']
+    assert 'Purchase average PKR 24,187.50' in captured['subtitle']
+    assert 'Available average PKR 24,187.50' in captured['subtitle']
     window.close()
 
 
-def test_empty_product_has_no_average_and_dashboard_shows_net_purchases(app, shop, monkeypatch):
+def test_empty_product_has_no_average_and_dashboard_shows_available_stock(app, shop, monkeypatch):
     import mobile_desk.ui.main_window as module
     monkeypatch.setattr(module, 'today', lambda: '2026-10-15')
     credentials = owner(shop)
@@ -63,15 +63,14 @@ def test_empty_product_has_no_average_and_dashboard_shows_net_purchases(app, sho
     stock = window.stock_page()
     stock.refresh()
     assert stock.table.item(0, 3).text() == '—'
-    assert stock.table.columnWidth(3) >= 220
+    assert stock.table.columnWidth(3) >= 150
     batch = purchase(shop)
     returned(shop, batch, 1, '2026-10-02', credentials)
     dashboard = window.dashboard()
     dashboard.refresh()
     labels = dashboard.findChildren(QLabel)
-    assert any(widget.text() == 'Net purchases this month' for widget in labels)
-    metrics = [widget.text() for widget in labels if widget.objectName() == 'metric']
-    assert metrics[2] == '100.00'
+    assert any(widget.text() == 'Available stock value (PKR)' for widget in labels)
+    assert dashboard.dashboard_data['stock']['value'] == money('100')
     window.close()
 
 
@@ -87,13 +86,17 @@ def test_purchase_page_routes_selected_shipment_to_return_and_arrival_dialogs(ap
     assert page.table.selected()['shipment_status'] == 'IN_TRANSIT'
     assert any(column[0] == 'shipment_status' for column in page.table.columns)
     labels = [widget.text() for widget in page.findChildren(QPushButton)]
-    assert {'Return / Cancel', 'Mark received', 'Returns / refunds'} <= set(labels)
+    assert 'Open purchase' in labels and 'Return / Cancel' not in labels
+    details_actions = {}
+    window.details = lambda title, subtitle, tables, actions: details_actions.update(actions)
+    window.batch_selected(page)
+    assert {'Return / Cancel', 'Mark received', 'Returns / refunds'} <= details_actions.keys()
     monkeypatch.setattr(module, 'PurchaseReturnDialog', lambda parent, ctx, identity: ('return', identity))
     monkeypatch.setattr(module, 'ReceivePurchaseDialog', lambda parent, ctx, identity: ('receive', identity))
     captured = []
     window.entry = captured.append
-    window.purchase_return_selected(page)
-    window.receive_purchase_selected(page)
+    details_actions['Return / Cancel']()
+    details_actions['Mark received']()
     assert captured == [('return', batch), ('receive', batch)]
     window.close()
 

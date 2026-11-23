@@ -18,6 +18,7 @@ DIST=ROOT/'dist'
 APP=DIST/'MobileDesk'
 DOCS=['README.md','USER_GUIDE.md','BUSINESS_RULES.md','DATABASE_SCHEMA.md','CATALOGUE.md','THIRD_PARTY_NOTICES.md','LICENSE']
 GUIDES=['REVISION_ACCEPTANCE.md','RESET_UNDO_ACCEPTANCE.md','SUPPLIER_SELECTION_ACCEPTANCE.md','CHINA_PURCHASE_ACCEPTANCE.md','FORM_SIMPLICITY_REVIEW.md','SIMPLER_FORMS_ACCEPTANCE.md']
+GUIDES += ['V7_CLIENT_FEEDBACK_MATRIX.md','V7_TEST_REPORT.md','V7_CHANGELOG.md']
 SOURCE_FILES=DOCS+['run_mobile_desk.py','pyproject.toml','requirements.txt','requirements-dev.txt','build_windows.ps1','.gitignore','.gitattributes']
 SOURCE_FILES += ['practice/'+name for name in ('Practice-Guide.md','Practice-Guide.html','China-Imports-And-Returns.md','Start-Practice.cmd','Sample-Catalogue-Update.json','Verified-Results.json')]
 SOURCE_FILES += ['tools/'+name for name in ('release.py','build_catalogue.py','gather_qt_notices.py','benchmark_business.py','clean_production.py','render_practice_guide.py','verify_practice_walkthrough.py')]

@@ -1,4 +1,4 @@
-#define AppVersion "1.6.0"
+#define AppVersion "1.7.0"
 [Setup]
 AppId={{187E601B-A049-4E9C-8C83-16630C96D029}
 AppName=Mobile Desk
@@ -22,7 +22,7 @@ SolidCompression=yes
 WizardStyle=modern
 CloseApplications=yes
 RestartApplications=no
-VersionInfoVersion=1.6.0.0
+VersionInfoVersion=1.7.0.0
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Shortcuts:"; Flags: unchecked
@@ -41,6 +41,7 @@ Type: files; Name: "{app}\MobileDesk-1.2.0-Source.zip"
 Type: files; Name: "{app}\MobileDesk-1.3.0-Source.zip"
 Type: files; Name: "{app}\MobileDesk-1.4.0-Source.zip"
 Type: files; Name: "{app}\MobileDesk-1.5.0-Source.zip"
+Type: files; Name: "{app}\MobileDesk-1.6.0-Source.zip"
 
 [Icons]
 Name: "{group}\Mobile Desk"; Filename: "{app}\MobileDesk.exe"
