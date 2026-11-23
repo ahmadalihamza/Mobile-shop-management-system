@@ -2,7 +2,7 @@ import os
 os.environ.setdefault('QT_QPA_PLATFORM','offscreen')
 import pytest
 from PySide6.QtCore import QDate
-from PySide6.QtWidgets import QApplication,QDialog,QLabel
+from PySide6.QtWidgets import QApplication,QDialog,QLabel,QPushButton
 from mobile_desk.ui.common import STYLE
 from mobile_desk.ui.main_window import MainWindow
 from mobile_desk.ui.people_money import AdjustmentDialog
@@ -77,11 +77,12 @@ def test_selected_sale_undo_uses_confirmation_without_text_entry(app,shop,monkey
     page.start.setDate(QDate(2026,10,1))
     page.end.setDate(QDate(2026,10,31))
     page.refresh()
+    undo = next(widget for widget in page.findChildren(QPushButton) if widget.text() == 'Undo Sale')
     monkeypatch.setattr(module,'confirm',lambda *args:False)
-    window.void(page,shop.sales.void)
+    undo.click()
     assert shop.sales.details(sale)[0]['status']=='POSTED'
     monkeypatch.setattr(module,'confirm',lambda *args:True)
-    window.void(page,shop.sales.void)
+    undo.click()
     assert shop.sales.details(sale)[0]['status']=='VOID'
     assert shop.stock.totals()['quantity']==4
     window.close()

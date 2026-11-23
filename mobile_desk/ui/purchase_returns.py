@@ -23,9 +23,10 @@ class PurchaseReturnDialog(EntryDialog):
         super().__init__(parent,'Purchase Cancellation' if cancelling else 'Stock Return to Supplier',1040)
         self.resize(1040,780)
         self.body.addWidget(label(self.batch['reference']+' · '+self.batch['supplier_snapshot']+'\n'+('Awaiting arrival: cancel selected ordered pieces.' if cancelling else 'Return only pieces still physically available from this purchase.'),'section',True))
-        self.date=self.field('Cancellation / return date',date_edit())
+        self.date=self.field('Cancellation date' if cancelling else 'Return date',date_edit())
         self.table=QTableWidget(0,5)
-        self.table.setHorizontalHeaderLabels(['Product','Bought','Already returned','Available to return','Return now'])
+        self.table.setHorizontalHeaderLabels(['Product','Ordered','Already cancelled','Can cancel','Cancel now']
+            if cancelling else ['Product','Bought','Already returned','Available to return','Return now'])
         self.table.horizontalHeader().setSectionResizeMode(0,QHeaderView.ResizeMode.Stretch)
         for column in range(1,5):
             self.table.horizontalHeader().setSectionResizeMode(column,QHeaderView.ResizeMode.ResizeToContents)
@@ -65,7 +66,7 @@ class PurchaseReturnDialog(EntryDialog):
         self.layout.insertWidget(2,self.summary)
         self.confirmation=QCheckBox('I confirm the purchase, quantities and actual refund shown above')
         self.layout.insertWidget(3,self.confirmation)
-        self.save_button.setText('Authorize and Finalize')
+        self.save_button.setText('Authorize and cancel shipment' if cancelling else 'Authorize and return stock')
         self.save_button.setObjectName('danger')
         self.save_handler=self.save
         for qty in self.quantities:

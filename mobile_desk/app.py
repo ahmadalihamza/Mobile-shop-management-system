@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 import sys
 from PySide6.QtCore import QLockFile,QTimer
-from PySide6.QtWidgets import QApplication,QMessageBox
+from PySide6.QtWidgets import QApplication,QMessageBox,QTabWidget
 from mobile_desk.context import Context
 from mobile_desk.paths import data_root,resource_path
 from mobile_desk.ui.common import STYLE
@@ -47,6 +47,13 @@ def smoke_capture(window,output):
             app.processEvents()
             window.grab().save(str(output/(title+'.png')))
             results.append(title)
+        window.navigate(0)
+        recent = window.pages[0].findChild(QTabWidget)
+        recent.setCurrentIndex(1)
+        app.processEvents()
+        window.grab().save(str(output/'dashboard_recent_purchases.png'))
+        results.append('dashboard_recent_purchases')
+        recent.setCurrentIndex(0)
         window.navigate(4)
         for tab,title in ((1,'suppliers'),(2,'money')):
             window.pages[4].setCurrentIndex(tab)

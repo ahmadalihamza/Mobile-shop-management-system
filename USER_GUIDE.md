@@ -16,6 +16,8 @@ Add customers and suppliers only as needed. Open their accounts and use Opening 
 
 Sales and Purchases list individual transactions: each saved invoice/purchase has its own row, including repeat purchases from the same supplier. Customers are buyers and show what they owe the shop. Suppliers are businesses the shop buys from and show what the shop owes them. Reuse one saved account for each person/business so its balance combines all its bills and payments.
 
+On Dashboard, Recent sales and Recent purchases list the last five saved entries and the phone names recorded on each one. Double-click a row to open its details.
+
 ## Make a sale
 
 Sales → New Sale. Add one or more products, quantity and selling price. Paid in full is selected by default, with Cash as the initial account. Select a bank if appropriate. A walk-in paid sale needs no customer.
@@ -70,12 +72,12 @@ In New Purchase, set Shipment to Awaiting arrival before saving an order entered
 
 ### Cancel a shipment or return purchased stock
 
-1. Select the original purchase, click Open purchase and use Return / Cancel. Awaiting-arrival shipments use Purchase Cancellation; received shipments use Stock Return to Supplier.
-2. All eligible quantities are selected initially. Keep them for a full cancellation/return, or reduce Return now to the partial quantities being sent back. Sold pieces cannot be returned until their actual customer return is recorded.
+1. Select the original purchase and click Return / Cancel. Awaiting-arrival shipments use Purchase Cancellation; received shipments use Stock Return to Supplier.
+2. All eligible quantities are selected initially. Keep them for a full cancellation/return, or reduce Cancel now or Return now to the quantities being cancelled or sent back. Sold pieces cannot be returned until their actual customer return is recorded.
 3. Enter the return/cancellation date. Review the purchase, pieces, landed cost removed and supplier bill credit. There is no reason field to fill in.
 4. If a refund has actually arrived, check Money has actually been received back, enter the actual PKR amount/account and select Supplier or Transport / carrier. Otherwise leave it unchecked; the supplier credit remains in the account and no cash is invented.
-5. Enter the owner username/password, tick the review confirmation and click Authorize and Finalize. Incorrect credentials or invalid quantities/refunds save nothing. Original purchase lots and payments stay in history; dated return entries reverse eligible stock and supplier charges.
-6. For a refund received later, select the purchase, click Open purchase and choose Returns / refunds, select the return/cancellation and click Confirm refund. Review the available credit, actual money received, account and date, then authenticate the owner and confirm. Partial refunds and separate carrier refunds can be recorded over time. Supplier credit already used against another purchase cannot also be refunded.
+5. Enter the owner username/password, tick the review confirmation and click Authorize and cancel shipment or Authorize and return stock. Incorrect credentials or invalid quantities/refunds save nothing. Original purchase lots and payments stay in history; dated return entries reverse eligible stock and supplier charges.
+6. For a refund received later, select the purchase and click Returns / refunds, select the return/cancellation and click Confirm refund. Review the available credit, actual money received, account and date, then authenticate the owner and confirm. Partial refunds and separate carrier refunds can be recorded over time. Supplier credit already used against another purchase cannot also be refunded.
 
 Supplier refunds settle supplier credit, not sales revenue or profit. Returned external carry that the supplier does not credit is shown as Purchase return cost loss in Period Profit; any actual carrier refund is recovered in the period received. Original RMB prices, saved rates and landed costs remain unchanged. The history shows the authenticated owner, automatic action description, date, quantities, credits and refunds. Older written descriptions remain in history. Returns and refunds are permanent history rather than deletable entries. If a finalized return itself was entered incorrectly, keep its evidence and have the owner record the real corrective purchase/payment; do not silently delete a refund that represents money received.
 
@@ -97,13 +99,13 @@ Average Purchase Price (PKR) is a separate overview: total original landed acqui
 
 ## Returns and mistakes
 
-Select the original invoice in Sales → Return. Enter the returned quantities and any actual refund account/amount. The returned value reduces the customer balance and the original stock cost is restored. A walk-in return requires a full refund.
+Select the original invoice in Sales → Open invoice → Return phones. Enter the returned quantities and any actual refund account/amount. The returned value reduces the customer balance and the original stock cost is restored. A walk-in return requires a full refund.
 
 Only return saleable goods to available stock. Damaged/unsaleable goods must not be recorded as normal returns in this quantity-trading workflow.
 
-For the most recently saved business transaction, open Settings → Owner & Reset → Undo Last Entry. Review its type, reference, date and amount and click Undo This Entry. No reason entry is needed. Purchase undo still requires the owner credentials. It supports sales, purchases/opening stock, returns, later customer/supplier payments, transport payments, expenses, transfers and new balance adjustments. Unsaved forms can be cancelled; product/settings edits are outside transaction undo.
+For the most recently saved business transaction, click Dashboard → Undo Last Entry. Review its type, reference, date and amount and click Undo This Entry. No reason entry is needed. Purchase undo still requires the owner credentials. It supports sales, purchases/opening stock, returns, later customer/supplier payments, transport payments, expenses, transfers and new balance adjustments. Unsaved forms can be cancelled; product/settings edits are outside transaction undo.
 
-For a specific wrong sale or purchase, select it in the relevant list and open the record and choose Undo sale or Undo purchase, then confirm the action, then post the corrected entry. The original remains visibly Voided for a reliable history, with an automatic correction description. Undo reverses its stock and attached payments. Correct dependent sales/returns first if stock from an earlier purchase has already been used. Later on-account collections/payments remain in history and may become advances until the replacement bill is entered. Undo does not silently delete history or automatically post a replacement.
+For a specific wrong sale or purchase, select the row and click Undo Sale or Undo Purchase. Confirm the action and enter the corrected transaction. The original remains visibly Voided for a reliable history, with an automatic correction description. Undo reverses its stock and attached payments. Correct dependent sales/returns first if stock from an earlier purchase has already been used. Later on-account collections/payments remain in history and may become advances until the replacement bill is entered. Undo does not silently delete history or automatically post a replacement.
 
 Wrong later payments and balance adjustments can be corrected from the account's Payments or Balance adjustments tab. Cash & Bank also provides payment/expense/transfer correction. Original invoice receipts are corrected with their invoice.
 

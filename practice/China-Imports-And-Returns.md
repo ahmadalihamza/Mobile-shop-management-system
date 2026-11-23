@@ -1,4 +1,4 @@
-# Practice the China import workflow — Mobile Desk 1.7.0
+# Practice the China import workflow — Mobile Desk 1.7.1
 
 Use the separate practice shop, never the client's real records. Back up that practice shop first. The examples below were verified through the actual Windows forms with fictional prices, contacts and dates. Start in an empty practice shop with Cash and a bank account, a product named Huawei P30 Pro, and one supplier named China training supplier. Set your own owner credentials in Settings → Owner & Reset.
 
@@ -16,13 +16,13 @@ Expected: (10 × 600 + 525) × 40 = PKR 261,000. Total acquired cost across the 
 
 ## 3. Cancel four incoming phones
 
-Select IMPORT-STACK-2 → Open purchase → Return / Cancel. Date 3 October. Change Return now from 10 to 4. There is no reason field to fill in. Leave Money has actually been received back unchecked. Enter your owner credentials, review the reference, quantity and credit, tick the confirmation and finalize.
+Select IMPORT-STACK-2 → Return / Cancel. Date 3 October. Change Cancel now from 10 to 4. There is no reason field to fill in. Leave Money has actually been received back unchecked. Enter your owner credentials, review the reference, quantity and credit, tick the confirmation and finalize.
 
 Expected: supplier credit PKR 104,400. Available stock is still 6 pieces. Cash / Bank has not increased. Six uncancelled phones remain on order. The net acquisition average is now PKR 23,550 across 12 phones.
 
 ## 4. Confirm the refund in two instalments
 
-Select that purchase → Open purchase → Returns / refunds → select its cancellation → Confirm refund. Date 4 October, actual amount PKR 40,000, received into the bank, payer Supplier. Authenticate and confirm actual receipt. Repeat on 5 October for PKR 64,400. Total refunded: PKR 104,400. The program cannot refund it twice or treat an unpaid/unconfirmed claim as cash.
+Select that purchase → Returns / refunds → select its cancellation → Confirm refund. Date 4 October, actual amount PKR 40,000, received into the bank, payer Supplier. Authenticate and confirm actual receipt. Repeat on 5 October for PKR 64,400. Total refunded: PKR 104,400. The program cannot refund it twice or treat an unpaid/unconfirmed claim as cash.
 
 ## 5. Receive the remaining phones
 
@@ -30,7 +30,7 @@ Select IMPORT-STACK-2 → Open purchase → Mark received. Date 6 October. Confi
 
 ## 6. Return part of the first arrived stack
 
-Select IMPORT-STACK-1 → Open purchase → Return / Cancel. Date 7 October, Return now 2. If the supplier has actually refunded PKR 42,000, check the received-money option, enter that amount and choose Cash. Enter owner credentials, review, confirm and finalize.
+Select IMPORT-STACK-1 → Return / Cancel. Date 7 October, Return now 2. If the supplier has actually refunded PKR 42,000, check the received-money option, enter that amount and choose Cash. Enter owner credentials, review, confirm and finalize.
 
 Expected: available stock 10 pieces / PKR 240,600; Average Purchase Price PKR 24,060. Total confirmed refunds are PKR 146,400. Across Cash and bank, net money paid is PKR 240,600. Supplier balance is zero. Original purchases, payments, automatic action descriptions, owners and refund dates remain visible in history.
 

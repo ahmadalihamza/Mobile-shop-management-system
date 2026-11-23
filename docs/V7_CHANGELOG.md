@@ -1,3 +1,10 @@
+# Mobile Desk 1.7.1 — Dashboard and corrections
+
+- Recent sales and Recent purchases show the phone names saved on each entry. Each model is listed once, even when several lines or stacks use that model.
+- The Dashboard activity area now contains two tabs, Recent sales and Recent purchases.
+- Undo Last Entry is available on Dashboard. Select a row on Sales or Purchases for Undo Sale or Undo Purchase.
+- Return / Cancel and Returns / refunds are directly available on Purchases. Cancellation and stock return prompts use action-specific labels. Owner authorization and actual-refund recording still apply.
+
 # Mobile Desk 1.7.0 — Simple Shop Edition
 
 - Six daily destinations and a Settings utility. The sidebar offers New Sale, New Purchase and Receive Payment. Accounts has Customers, Suppliers and Cash & Bank tabs. Settings has activity history and Undo Last Entry.

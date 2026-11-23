@@ -71,7 +71,9 @@ class SaleService:
             COALESCE((SELECT SUM(amount) FROM payments p WHERE p.sale_id=s.id AND p.purpose='SALE_RECEIPT' AND p.voided_at IS NULL),0) AS paid,
             COALESCE((SELECT SUM(quantity) FROM sale_items WHERE sale_id=s.id),0) AS quantity,
             COALESCE((SELECT SUM(total) FROM returns r WHERE r.original_sale_id=s.id AND r.status='POSTED'),0) AS returned,
-            COALESCE((SELECT GROUP_CONCAT(DISTINCT product_description_snapshot) FROM sale_items WHERE sale_id=s.id),'') AS product_names
+            COALESCE((SELECT GROUP_CONCAT(product_description_snapshot, '; ')
+                FROM (SELECT product_description_snapshot FROM sale_items WHERE sale_id=s.id
+                      GROUP BY product_description_snapshot ORDER BY MIN(id))), '') AS product_names
             FROM sales s WHERE """ + ' AND '.join(clauses) + ' ORDER BY s.transaction_date DESC,s.id DESC LIMIT ? OFFSET ?', (*params, limit, offset))
 
     def details(self, identity):

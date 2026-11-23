@@ -1,6 +1,6 @@
 # Mobile Desk — complete practice workbook
 
-For Mobile Desk 1.7.0. Follow the main trading day in order, then try the extra exercises. The figures below were checked against the actual application's calculation engine. These are fictional training prices, exchange rates and contacts, not market quotations. The additional China-Imports-And-Returns.md guide covers stack charges, arrival, supplier returns and confirmed refunds. Reason fields have been removed; the software records action descriptions automatically.
+For Mobile Desk 1.7.1. Follow the main trading day in order, then try the extra exercises. The figures below were checked against the actual application's calculation engine. These are fictional training prices, exchange rates and contacts, not market quotations. The additional China-Imports-And-Returns.md guide covers stack charges, arrival, supplier returns and confirmed refunds. Reason fields have been removed; the software records action descriptions automatically.
 
 ## 1. Open the separate blank practice shop
 
@@ -316,7 +316,7 @@ Invoices keep original Paid at sale and Credit at sale. Bills / balances and sta
 
 Start from the completed-day backup. Add an Expense: date 1 October, description `Mistaken learning expense`, amount **1,000**, Cash. Cash becomes **439,000** and profit after expenses **28,000**.
 
-Open **Settings → Owner & Reset → Undo Last Entry**. Confirm it shows this expense and click **Undo This Entry**. No reason typing is required. Cash returns to **440,000**, profit to **29,000**. In Expenses the original still exists with a void timestamp. The app retains correction history.
+Click **Dashboard → Undo Last Entry**. Confirm it shows this expense and click **Undo This Entry**. No reason typing is required. Cash returns to **440,000**, profit to **29,000**. In Expenses the original still exists with a void timestamp. The app retains correction history.
 
 For an older specific record use the relevant list's **Undo selected entry**, **Void** or **Correct payment** button. Customer/supplier account detail → Payments/Balance adjustments also has **Correct selected entry**. Posted invoice receipts are corrected with their original invoice, not independently through payment correction.
 
@@ -326,7 +326,7 @@ Unsaved text can use normal text-field Undo/Ctrl+Z; Cancel closes an unsaved ent
 
 Restore CompletedDay first. Buy one Practice Used Phone at **18,000**, Local purchase, reference `UNDO-LOCAL-1`, supplier blank, record payment **18,000 from Cash**. A fully paid purchase needs no supplier. Sell that phone to a walk-in for **22,000**, fully paid Cash.
 
-Try selecting UNDO-LOCAL-1 → Open purchase → Undo purchase (in More actions if needed). The app must block reversal because an active sale uses its stock. Undo the new 22,000 sale first, then undo the 18,000 purchase. Stock and money return to the completed-day baseline. The sale and purchase remain visibly Voided.
+Try selecting UNDO-LOCAL-1 → Undo Purchase. The app must block reversal because an active sale uses its stock. Undo the new 22,000 sale first, then undo the 18,000 purchase. Stock and money return to the completed-day baseline. The sale and purchase remain visibly Voided.
 
 Later independent on-account payments are not automatically undone with a purchase/sale; they may become advances until a replacement bill is entered. Active returns must be corrected before their original invoice can be undone.
 

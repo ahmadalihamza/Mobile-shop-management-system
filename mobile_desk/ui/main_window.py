@@ -195,7 +195,8 @@ class MainWindow(QMainWindow):
             layout.addWidget(label(self.ctx.catalogue_warning,'notice',True))
         actions = QHBoxLayout()
         for title, action in [('New Sale',self.new_sale),('New Purchase',self.new_purchase),
-                              ('Receive Payment',lambda:self.payment()),('View Stock',lambda:self.navigate(3))]:
+                              ('Receive Payment',lambda:self.payment()),('View Stock',lambda:self.navigate(3)),
+                              ('Undo Last Entry',self.undo_latest)]:
             actions.addWidget(button(title,action,title=='New Sale'))
         layout.addLayout(actions)
         grid = QGridLayout()
@@ -219,16 +220,20 @@ class MainWindow(QMainWindow):
         summary = label('','subtitle',True)
         layout.addWidget(summary)
         lower = QTabWidget()
+        phones = ('product_names','Phone names',lambda value:value.replace('; ','\n'))
         sales = DataTable([('transaction_date','Date'),('invoice_number','Invoice'),
-            ('customer_snapshot','Customer'),('quantity','Pieces'),('total','PKR',currency)])
+            ('customer_snapshot','Customer'),('quantity','Pieces'),phones,('total','PKR',currency)])
         purchases = DataTable([('transaction_date','Date'),('reference','Batch'),
-            ('supplier_snapshot','Supplier'),('quantity','Pieces'),('total','PKR',currency)])
-        best = DataTable([('custom_name','Model'),('net_quantity','Net pieces'),
-            ('net_sales','Net sales PKR',currency),('selling_average','Selling average PKR',currency)])
-        dues = DataTable([('name','Customer'),('phone','Phone'),('balance','Owes PKR',currency)])
-        for widget,title in ((sales,'Recent sales'),(purchases,'Recent purchases'),
-                             (best,'Best sellers this month'),(dues,'Outstanding customers')):
-            lower.addTab(widget,title)
+            ('supplier_snapshot','Supplier'),('quantity','Pieces'),phones,('total','PKR',currency)])
+        for table,title in ((sales,'Recent sales'),(purchases,'Recent purchases')):
+            header = table.horizontalHeader()
+            header.setStretchLastSection(False)
+            header.setSectionResizeMode(2,QHeaderView.ResizeMode.Interactive)
+            table.setColumnWidth(2,150)
+            header.setSectionResizeMode(4,QHeaderView.ResizeMode.Stretch)
+            table.verticalHeader().setMinimumSectionSize(42)
+            table.setWordWrap(True)
+            lower.addTab(table,title)
         lower.setMinimumHeight(260)
         empty = label('','subtitle')
         layout.addWidget(lower,1)
@@ -240,16 +245,11 @@ class MainWindow(QMainWindow):
             current = lower.currentWidget()
             if current is sales:
                 rows = self.ctx.sales.list(limit=5,posted_only=True)
-            elif current is purchases:
-                rows = self.ctx.purchases.list(limit=5,posted_only=True)
-            elif current is best:
-                rows = sorted(self.ctx.reports.model_sales(today()[:8]+'01',today()),
-                              key=lambda row:row['net_quantity'],reverse=True)
-                rows = [row for row in rows if row['net_quantity']>0][:5]
             else:
-                rows = page.dashboard_data['outstanding_customers']
+                rows = self.ctx.purchases.list(limit=5,posted_only=True)
             current.populate(rows)
-            empty.setText('' if rows else ('No outstanding customers' if current is dues else 'No transactions yet'))
+            current.resizeRowsToContents()
+            empty.setText('' if rows else 'No transactions yet')
 
         timer = QTimer(page)
         timer.setSingleShot(True)
@@ -285,11 +285,12 @@ class MainWindow(QMainWindow):
             self.sales_rows,date_filter=True)
         header=page.table.horizontalHeader()
         header.setStretchLastSection(False)
-        for column,width in ((1,145),(2,140)):
+        for column,width in ((0,108),(1,145),(2,140),(4,118),(5,128),(6,128),(7,90)):
             header.setSectionResizeMode(column,QHeaderView.ResizeMode.Interactive)
             page.table.setColumnWidth(column,width)
         header.setSectionResizeMode(3,QHeaderView.ResizeMode.Stretch)
-        for title,fn in [('New Sale',self.new_sale),('Open invoice',lambda:self.invoice_selected(page))]:
+        for title,fn in [('New Sale',self.new_sale),('Open invoice',lambda:self.invoice_selected(page)),
+                         ('Undo Sale',lambda:self.void(page,self.ctx.sales.void))]:
             page.actions.insertWidget(page.actions.count()-1,button(title,fn,title=='New Sale'))
         page.customer=QComboBox()
         page.customer.addItem('All customers',None)
@@ -386,7 +387,10 @@ class MainWindow(QMainWindow):
                 page.table.item(index,2).setText(row['product_names'].replace('; ','\n'))
             page.table.resizeRowsToContents()
         page.refresh=refresh
-        for title,fn in [('New Purchase',self.new_purchase),('Open purchase',lambda:self.batch_selected(page))]:
+        for title,fn in [('New Purchase',self.new_purchase),('Open purchase',lambda:self.batch_selected(page)),
+                         ('Undo Purchase',lambda:self.void(page,self.ctx.purchases.void)),
+                         ('Return / Cancel',lambda:self.purchase_return_selected(page)),
+                         ('Returns / refunds',lambda:self.purchase_return_history(page))]:
             page.actions.insertWidget(page.actions.count()-1,button(title,fn,title=='New Purchase'))
         page.kind=QComboBox()
         for title,value in [('All types',''),('Local','LOCAL'),('China import','CHINA_IMPORT'),('Opening stock','OPENING')]:
@@ -412,7 +416,12 @@ class MainWindow(QMainWindow):
     def purchase_return_selected(self,page):
         row=self.selected(page)
         if row:
-            self.safe(lambda:self.entry(PurchaseReturnDialog(self,self.ctx,row['id'])))
+            def open_return():
+                dialog = PurchaseReturnDialog(self,self.ctx,row['id'])
+                if not dialog.preview['returnable_quantity']:
+                    raise BusinessError('This purchase has no pieces available to return or cancel.')
+                return self.entry(dialog)
+            self.safe(open_return)
 
     def receive_purchase_selected(self,page):
         row=self.selected(page)

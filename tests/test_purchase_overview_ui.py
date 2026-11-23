@@ -5,7 +5,7 @@ import os
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 import pytest
 from PySide6.QtCore import QDate
-from PySide6.QtWidgets import QApplication, QDialog, QLabel, QLineEdit, QPushButton
+from PySide6.QtWidgets import QApplication, QDialog, QLabel, QLineEdit, QPushButton, QTabWidget
 
 from mobile_desk.ui.common import STYLE
 from mobile_desk.ui.main_window import MainWindow
@@ -86,7 +86,7 @@ def test_purchase_page_routes_selected_shipment_to_return_and_arrival_dialogs(ap
     assert page.table.selected()['shipment_status'] == 'IN_TRANSIT'
     assert any(column[0] == 'shipment_status' for column in page.table.columns)
     labels = [widget.text() for widget in page.findChildren(QPushButton)]
-    assert 'Open purchase' in labels and 'Return / Cancel' not in labels
+    assert {'Open purchase', 'Undo Purchase', 'Return / Cancel', 'Returns / refunds'} <= set(labels)
     details_actions = {}
     window.details = lambda title, subtitle, tables, actions: details_actions.update(actions)
     window.batch_selected(page)
@@ -130,10 +130,16 @@ def test_history_keeps_returns_and_confirmed_refunds_and_uses_selected_return(ap
 
 def test_mistaken_purchase_undo_requires_owner_and_retains_original_record(app, shop):
     credentials = owner(shop)
-    batch = purchase(shop)
+    batch = purchase(shop, payments=[dict(account_id=shop.cash, amount='200')])
     window = MainWindow(shop)
-    row = shop.purchases.details(batch)[0]
-    dialog = window.purchase_undo_dialog(row)
+    page = window.purchase_page()
+    page.start.setDate(QDate(2026, 10, 1))
+    page.end.setDate(QDate(2026, 10, 31))
+    captured = []
+    window.entry = captured.append
+    next(widget for widget in page.findChildren(QPushButton) if widget.text() == 'Undo Purchase').click()
+    dialog, = captured
+    assert shop.money.accounts()[0]['balance'] == -money('200')
     assert dialog.password.echoMode() == QLineEdit.EchoMode.Password
     assert not hasattr(dialog,'reason')
     dialog.password.setText('incorrect password')
@@ -146,6 +152,7 @@ def test_mistaken_purchase_undo_requires_owner_and_retains_original_record(app, 
     assert dialog.result() == QDialog.DialogCode.Accepted, dialog.error.text()
     assert shop.stock.totals()['quantity'] == 0
     assert shop.purchases.details(batch)[0]['status'] == 'VOID'
+    assert shop.money.accounts()[0]['balance'] == 0
     window.close()
 
 
@@ -180,4 +187,64 @@ def test_reports_show_rmb_carry_net_returns_and_export_average_as_pkr(app, shop,
     report.refresh()
     assert 'confirmed carry refunds' in report.note.text()
     assert 'not sales or profit' in report.note.text()
+    window.close()
+
+
+
+def test_dashboard_shows_original_names_for_each_phone_model(app, shop):
+    other = shop.products.save(custom_name='Huawei P30 Pro, 256 GB')
+    shop.purchases.post('2026-10-01', [
+        dict(product_id=shop.product, quantity=2, unit_price='100'),
+        dict(product_id=other, quantity=2, unit_price='200'),
+    ], supplier_id=shop.supplier)
+    shop.sales.post('2026-10-02', [
+        dict(product_id=shop.product, quantity=1, selling_rate='150'),
+        dict(product_id=other, quantity=1, selling_rate='250'),
+        dict(product_id=shop.product, quantity=1, selling_rate='160'),
+    ], customer_id=shop.customer)
+    shop.products.save(product_id=other, custom_name='Renamed Huawei')
+    window = MainWindow(shop)
+    tabs = window.pages[0].findChild(QTabWidget)
+    assert [tabs.tabText(i) for i in range(tabs.count())] == ['Recent sales', 'Recent purchases']
+    for index in range(2):
+        tabs.setCurrentIndex(index)
+        app.processEvents()
+        table = tabs.currentWidget()
+        assert table.horizontalHeaderItem(4).text() == 'Phone names'
+        expected = 'MI 11 Ultra 12/256 Shade\nHuawei P30 Pro, 256 GB'
+        assert table.item(0, 4).text() == expected
+        assert table.item(0, 4).toolTip() == expected
+    window.close()
+
+
+@pytest.mark.parametrize('refund_received', [False, True])
+def test_cancel_shipment_from_list_posts_only_a_confirmed_refund(app, shop, refund_received):
+    credentials = owner(shop)
+    batch = purchase(shop, received=False, payments=[dict(account_id=shop.cash, amount='120')])
+    assert shop.stock.totals()['quantity'] == 0
+    window = MainWindow(shop)
+    page = window.purchase_page()
+    page.start.setDate(QDate(2026, 10, 1))
+    page.end.setDate(QDate(2026, 10, 31))
+    opened = []
+    window.entry = opened.append
+    next(widget for widget in page.findChildren(QPushButton) if widget.text() == 'Return / Cancel').click()
+    dialog, = opened
+    assert dialog.table.horizontalHeaderItem(4).text() == 'Cancel now'
+    assert dialog.quantities[0].value() == 2
+    dialog.date.setDate(QDate(2026, 10, 2))
+    dialog.password.setText(credentials['password'])
+    if refund_received:
+        dialog.refund_confirmed.setChecked(True)
+        dialog.refund.setText('120')
+        dialog.account.setCurrentIndex(dialog.account.findData(shop.bank))
+    dialog.confirmation.setChecked(True)
+    dialog.commit()
+    assert dialog.result() == QDialog.DialogCode.Accepted, dialog.error.text()
+    assert shop.purchases.details(batch)[0]['shipment_status'] == 'CANCELLED'
+    assert shop.stock.totals()['quantity'] == 0
+    balances = {account['id']: account['balance'] for account in shop.money.accounts()}
+    assert balances[shop.cash] == -money('120')
+    assert balances[shop.bank] == (money('120') if refund_received else 0)
+    assert shop.parties.balance(shop.supplier, role='SUPPLIER') == (0 if refund_received else -money('120'))
     window.close()
