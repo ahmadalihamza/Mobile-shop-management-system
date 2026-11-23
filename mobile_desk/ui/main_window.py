@@ -220,19 +220,24 @@ class MainWindow(QMainWindow):
         summary = label('','subtitle',True)
         layout.addWidget(summary)
         lower = QTabWidget()
-        phones = ('product_names','Phone names',lambda value:value.replace('; ','\n'))
+        phones = ('phone_names','Phone names')
         sales = DataTable([('transaction_date','Date'),('invoice_number','Invoice'),
-            ('customer_snapshot','Customer'),('quantity','Pieces'),phones,('total','PKR',currency)])
+            ('customer_snapshot','Customer'),('quantity','Pieces'),phones,
+            ('average_prices','Sale avg. (PKR)'),('total','Total PKR',currency)])
         purchases = DataTable([('transaction_date','Date'),('reference','Batch'),
-            ('supplier_snapshot','Supplier'),('quantity','Pieces'),phones,('total','PKR',currency)])
+            ('supplier_snapshot','Supplier'),('quantity','Pieces'),phones,
+            ('average_prices','Purchase avg. (PKR)'),('total','Total PKR',currency)])
+        sales.horizontalHeaderItem(5).setToolTip('Selling value divided by pieces for each model in this invoice.')
+        purchases.horizontalHeaderItem(5).setToolTip('Landed cost, including saved cargo charges, divided by pieces for each model in this batch.')
         for table,title in ((sales,'Recent sales'),(purchases,'Recent purchases')):
             header = table.horizontalHeader()
             header.setStretchLastSection(False)
-            header.setSectionResizeMode(2,QHeaderView.ResizeMode.Interactive)
-            table.setColumnWidth(2,150)
+            for column,width in ((1,115),(2,110),(3,55)):
+                header.setSectionResizeMode(column,QHeaderView.ResizeMode.Interactive)
+                table.setColumnWidth(column,width)
             header.setSectionResizeMode(4,QHeaderView.ResizeMode.Stretch)
             table.verticalHeader().setMinimumSectionSize(42)
-            table.setWordWrap(True)
+            table.setWordWrap(False)
             lower.addTab(table,title)
         lower.setMinimumHeight(260)
         empty = label('','subtitle')
@@ -247,7 +252,15 @@ class MainWindow(QMainWindow):
                 rows = self.ctx.sales.list(limit=5,posted_only=True)
             else:
                 rows = self.ctx.purchases.list(limit=5,posted_only=True)
+            models = self.ctx.reports.transaction_model_prices(
+                [row['id'] for row in rows], purchase=current is purchases)
+            for row in rows:
+                phone_prices = models.get(row['id'], [])
+                row['phone_names'] = '\n'.join(name for name, _ in phone_prices)
+                row['average_prices'] = '\n'.join(currency(price) for _, price in phone_prices) or '—'
             current.populate(rows)
+            for index in range(current.rowCount()):
+                current.item(index,5).setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
             current.resizeRowsToContents()
             empty.setText('' if rows else 'No transactions yet')
 

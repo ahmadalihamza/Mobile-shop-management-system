@@ -1,3 +1,7 @@
+# Mobile Desk 1.7.2 — Dashboard prices
+
+- Recent sales and Recent purchases show a quantity-weighted PKR price per phone for each model in the invoice or purchase batch. Purchase averages include saved cargo.
+
 # Mobile Desk 1.7.1 — Dashboard and corrections
 
 - Recent sales and Recent purchases show the phone names saved on each entry. Each model is listed once, even when several lines or stacks use that model.

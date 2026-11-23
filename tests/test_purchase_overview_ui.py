@@ -191,16 +191,18 @@ def test_reports_show_rmb_carry_net_returns_and_export_average_as_pkr(app, shop,
 
 
 
-def test_dashboard_shows_original_names_for_each_phone_model(app, shop):
-    other = shop.products.save(custom_name='Huawei P30 Pro, 256 GB')
+def test_dashboard_shows_original_names_and_weighted_prices_for_each_model(app, shop):
+    other = shop.products.save(custom_name='Huawei P30 Pro; 256 GB')
     shop.purchases.post('2026-10-01', [
-        dict(product_id=shop.product, quantity=2, unit_price='100'),
-        dict(product_id=other, quantity=2, unit_price='200'),
-    ], supplier_id=shop.supplier)
+        dict(product_id=shop.product, quantity=2, unit_price='100', carry='3'),
+        dict(product_id=other, quantity=2, unit_price='200', carry='5'),
+        dict(product_id=shop.product, quantity=3, unit_price='130', carry='1.01'),
+    ], supplier_id=shop.supplier, purchase_type='CHINA_IMPORT', default_rate='40',
+       carry_currency='CNY', carry_basis='STACK_TOTAL')
     shop.sales.post('2026-10-02', [
         dict(product_id=shop.product, quantity=1, selling_rate='150'),
         dict(product_id=other, quantity=1, selling_rate='250'),
-        dict(product_id=shop.product, quantity=1, selling_rate='160'),
+        dict(product_id=shop.product, quantity=2, selling_rate='160'),
     ], customer_id=shop.customer)
     shop.products.save(product_id=other, custom_name='Renamed Huawei')
     window = MainWindow(shop)
@@ -211,9 +213,13 @@ def test_dashboard_shows_original_names_for_each_phone_model(app, shop):
         app.processEvents()
         table = tabs.currentWidget()
         assert table.horizontalHeaderItem(4).text() == 'Phone names'
-        expected = 'MI 11 Ultra 12/256 Shade\nHuawei P30 Pro, 256 GB'
+        expected = 'MI 11 Ultra 12/256 Shade\nHuawei P30 Pro; 256 GB'
         assert table.item(0, 4).text() == expected
         assert table.item(0, 4).toolTip() == expected
+        price_header = ('Sale avg. (PKR)', 'Purchase avg. (PKR)')[index]
+        prices = ('156.67\n250.00', '4,752.08\n8,100.00')[index]
+        assert table.horizontalHeaderItem(5).text() == price_header
+        assert table.item(0, 5).text() == prices
     window.close()
 
 

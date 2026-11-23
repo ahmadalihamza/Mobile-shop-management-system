@@ -16,7 +16,7 @@ Add customers and suppliers only as needed. Open their accounts and use Opening 
 
 Sales and Purchases list individual transactions: each saved invoice/purchase has its own row, including repeat purchases from the same supplier. Customers are buyers and show what they owe the shop. Suppliers are businesses the shop buys from and show what the shop owes them. Reuse one saved account for each person/business so its balance combines all its bills and payments.
 
-On Dashboard, Recent sales and Recent purchases list the last five saved entries and the phone names recorded on each one. Double-click a row to open its details.
+On Dashboard, Recent sales and Recent purchases list the last five saved entries and the phone names recorded on each one. Each model shows its average selling price on that invoice or its average landed purchase price on that batch, including saved cargo. Double-click a row to open its details.
 
 ## Make a sale
 

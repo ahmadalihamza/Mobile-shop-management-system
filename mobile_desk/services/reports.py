@@ -170,6 +170,29 @@ class ReportService:
     def returns(self, start, end, customer_id=None):
         return self.db.rows("SELECT r.id,CASE WHEN r.date_label!='' THEN r.date_label ELSE r.transaction_date END transaction_date,COALESCE(s.invoice_number,'Historical / unlinked') invoice_number,r.customer_snapshot,r.total,CASE WHEN EXISTS(SELECT 1 FROM return_items i WHERE i.return_id=r.id AND cogs_known=0) THEN NULL ELSE r.cogs_reversed END cogs_reversed,r.status,r.notes FROM returns r LEFT JOIN sales s ON s.id=r.original_sale_id WHERE r.transaction_date BETWEEN ? AND ?"+(' AND r.customer_id=?' if customer_id else '')+" ORDER BY r.transaction_date DESC,r.id DESC", (start, end,*((customer_id,) if customer_id else ())))
 
+    def transaction_model_prices(self, transaction_ids, *, purchase=False):
+        """Group saved phone names and weighted prices for the displayed transactions."""
+        if not transaction_ids:
+            return {}
+        table, parent, total = (
+            ('purchase_items', 'purchase_batch_id', 'line_total_cost') if purchase else
+            ('sale_items', 'sale_id', 'line_total')
+        )
+        placeholders = ','.join('?' for _ in transaction_ids)
+        rows = self.db.rows(f"""
+            SELECT {parent} transaction_id, product_description_snapshot model,
+                   SUM(quantity) pieces, SUM({total}) amount
+            FROM {table}
+            WHERE {parent} IN ({placeholders})
+            GROUP BY {parent}, product_id, product_description_snapshot
+            ORDER BY {parent}, MIN(id)
+        """, transaction_ids)
+        grouped = {}
+        for row in rows:
+            average = weighted_average(row['amount'], row['pieces'])
+            grouped.setdefault(row['transaction_id'], []).append((row['model'], average))
+        return grouped
+
     def dashboard(self, day=None):
         day = day or today()
         daily = next((row for row in self.sales_summary(day, day) if row['period']==day),
